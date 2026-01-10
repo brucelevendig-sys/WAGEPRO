@@ -1,0 +1,2598 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>WAGEPRO - Clock In</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            color: #eee;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 500px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* Header */
+        .header {
+            text-align: center;
+            padding: 20px 0;
+        }
+
+        .header h1 {
+            font-size: 1.8em;
+            color: #4ecca3;
+            margin-bottom: 5px;
+        }
+
+        .header .subtitle {
+            color: #888;
+            font-size: 0.9em;
+        }
+
+        /* Login Screen */
+        .login-box {
+            background: rgba(255,255,255,0.05);
+            border-radius: 20px;
+            padding: 30px;
+            margin-top: 30px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            color: #aaa;
+            font-size: 0.85em;
+            margin-bottom: 8px;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid rgba(255,255,255,0.1);
+            border-radius: 12px;
+            background: rgba(0,0,0,0.3);
+            color: #fff;
+            font-size: 1.2em;
+            text-align: center;
+            letter-spacing: 2px;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #4ecca3;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 18px;
+            border: none;
+            border-radius: 12px;
+            font-size: 1.1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #4ecca3 0%, #38a3a5 100%);
+            color: #1a1a2e;
+        }
+
+        .btn-primary:active {
+            transform: scale(0.98);
+        }
+
+        .btn-primary:disabled {
+            background: #333;
+            color: #666;
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #e94560 0%, #c73659 100%);
+            color: white;
+        }
+
+        .btn-secondary {
+            background: rgba(255,255,255,0.1);
+            color: #aaa;
+            border: 2px solid rgba(255,255,255,0.2);
+        }
+
+        /* Dashboard */
+        .dashboard {
+            display: none;
+        }
+
+        .worker-info {
+            background: rgba(255,255,255,0.05);
+            border-radius: 16px;
+            padding: 20px;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .worker-name {
+            font-size: 1.4em;
+            font-weight: 700;
+            color: #4ecca3;
+            margin-bottom: 5px;
+        }
+
+        .site-name {
+            color: #888;
+            font-size: 0.9em;
+        }
+
+        /* Clock Display */
+        .clock-display {
+            text-align: center;
+            padding: 30px 0;
+        }
+
+        .current-time {
+            font-size: 3.5em;
+            font-weight: 700;
+            color: #fff;
+            font-family: 'SF Mono', 'Courier New', monospace;
+        }
+
+        .current-date {
+            color: #888;
+            font-size: 1.1em;
+            margin-top: 5px;
+        }
+
+        /* Status Cards */
+        .status-card {
+            background: rgba(255,255,255,0.05);
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 15px;
+        }
+
+        .status-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .status-row:last-child {
+            border-bottom: none;
+        }
+
+        .status-label {
+            color: #888;
+            font-size: 0.9em;
+        }
+
+        .status-value {
+            font-weight: 600;
+            font-size: 1.1em;
+        }
+
+        .status-value.success {
+            color: #4ecca3;
+        }
+
+        .status-value.warning {
+            color: #f39c12;
+        }
+
+        .status-value.error {
+            color: #e94560;
+        }
+
+        /* Points Card */
+        .points-card {
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.2), rgba(118, 75, 162, 0.2));
+            border: 1px solid rgba(102, 126, 234, 0.3);
+            border-radius: 16px;
+            padding: 15px 20px;
+            margin-bottom: 15px;
+            display: none;
+        }
+
+        .points-card.visible {
+            display: block;
+        }
+
+        .points-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .points-title {
+            font-size: 0.9em;
+            color: #a3a3a3;
+        }
+
+        .points-period {
+            font-size: 0.75em;
+            color: #888;
+        }
+
+        .points-display {
+            display: flex;
+            justify-content: space-around;
+            text-align: center;
+        }
+
+        .points-item {
+            flex: 1;
+        }
+
+        .points-value {
+            font-size: 1.5em;
+            font-weight: 700;
+        }
+
+        .points-value.positive {
+            color: #4ecca3;
+        }
+
+        .points-value.negative {
+            color: #e94560;
+        }
+
+        .points-value.neutral {
+            color: #667eea;
+        }
+
+        .points-label {
+            font-size: 0.7em;
+            color: #888;
+            margin-top: 2px;
+        }
+
+        /* GPS Status */
+        .gps-status {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            padding: 15px;
+            background: rgba(0,0,0,0.2);
+            border-radius: 12px;
+            margin-bottom: 20px;
+        }
+
+        .gps-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        .gps-dot.searching {
+            background: #f39c12;
+        }
+
+        .gps-dot.found {
+            background: #4ecca3;
+        }
+
+        .gps-dot.error {
+            background: #e94560;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        /* Clock In/Out Buttons */
+        .clock-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .clock-btn {
+            padding: 25px;
+            border-radius: 16px;
+            font-size: 1.3em;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+        }
+
+        .clock-btn .icon {
+            font-size: 1.5em;
+        }
+
+        .clock-btn.signin {
+            background: linear-gradient(135deg, #4ecca3 0%, #38a3a5 100%);
+            color: #1a1a2e;
+        }
+
+        .clock-btn.signout {
+            background: linear-gradient(135deg, #e94560 0%, #c73659 100%);
+            color: white;
+        }
+
+        .clock-btn:disabled {
+            background: #333;
+            color: #666;
+            pointer-events: none;
+        }
+
+        .clock-btn:not(:disabled) {
+            cursor: pointer;
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
+            user-select: none;
+            position: relative;
+            z-index: 10;
+        }
+
+        /* Picture Upload */
+        .picture-section {
+            background: rgba(255,255,255,0.05);
+            border-radius: 16px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+
+        .picture-section h3 {
+            color: #4ecca3;
+            margin-bottom: 15px;
+            font-size: 1.1em;
+        }
+
+        .picture-count {
+            text-align: center;
+            padding: 15px;
+            background: rgba(0,0,0,0.2);
+            border-radius: 12px;
+            margin-bottom: 15px;
+        }
+
+        .picture-count .number {
+            font-size: 2.5em;
+            font-weight: 700;
+            color: #4ecca3;
+        }
+
+        .picture-count .label {
+            color: #888;
+            font-size: 0.85em;
+        }
+
+        .upload-btn {
+            width: 100%;
+            padding: 20px;
+            border: 2px dashed rgba(255,255,255,0.3);
+            border-radius: 12px;
+            background: transparent;
+            color: #aaa;
+            font-size: 1em;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .upload-btn:active {
+            border-color: #4ecca3;
+            color: #4ecca3;
+        }
+
+        #pictureInput {
+            display: none;
+        }
+
+        .picture-preview {
+            margin-top: 15px;
+            display: none;
+        }
+
+        .picture-preview img {
+            width: 100%;
+            border-radius: 12px;
+            margin-bottom: 10px;
+        }
+
+        .picture-preview .caption-input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid rgba(255,255,255,0.1);
+            border-radius: 8px;
+            background: rgba(0,0,0,0.3);
+            color: #fff;
+            font-size: 0.9em;
+            margin-bottom: 10px;
+        }
+
+        /* Picture Thumbnails */
+        .picture-thumbnails {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-top: 15px;
+        }
+
+        .thumb {
+            width: 60px;
+            height: 60px;
+            border-radius: 8px;
+            object-fit: cover;
+            border: 2px solid rgba(255,255,255,0.2);
+        }
+
+        /* Messages */
+        .message {
+            padding: 15px;
+            border-radius: 12px;
+            margin-bottom: 15px;
+            text-align: center;
+            display: none;
+        }
+
+        .message.error {
+            background: rgba(233, 69, 96, 0.2);
+            color: #e94560;
+            border: 1px solid #e94560;
+        }
+
+        .message.success {
+            background: rgba(78, 204, 163, 0.2);
+            color: #4ecca3;
+            border: 1px solid #4ecca3;
+        }
+
+        /* Logout */
+        .logout-btn {
+            margin-top: 30px;
+            background: transparent;
+            border: 1px solid rgba(255,255,255,0.2);
+            color: #888;
+            padding: 12px;
+            border-radius: 8px;
+            width: 100%;
+            cursor: pointer;
+        }
+
+        /* Loading Overlay */
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.8);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .loading-spinner {
+            text-align: center;
+            color: #fff;
+        }
+
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid rgba(255,255,255,0.1);
+            border-top-color: #4ecca3;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Distance Warning */
+        .distance-warning {
+            background: rgba(243, 156, 18, 0.2);
+            border: 1px solid #f39c12;
+            color: #f39c12;
+            padding: 12px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            text-align: center;
+            font-size: 0.9em;
+            display: none;
+        }
+
+        /* Override Reason Modal */
+        .reason-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.9);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1001;
+            padding: 20px;
+        }
+
+        .reason-modal.show {
+            display: flex;
+        }
+
+        .reason-content {
+            background: #1a1a2e;
+            border-radius: 20px;
+            padding: 25px;
+            width: 100%;
+            max-width: 400px;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .reason-content h3 {
+            color: #f39c12;
+            margin-bottom: 10px;
+            font-size: 1.2em;
+        }
+
+        .reason-content .window-info {
+            color: #888;
+            font-size: 0.9em;
+            margin-bottom: 20px;
+            padding: 10px;
+            background: rgba(0,0,0,0.3);
+            border-radius: 8px;
+        }
+
+        .reason-content .window-info strong {
+            color: #4ecca3;
+        }
+
+        .reason-content textarea {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid rgba(255,255,255,0.1);
+            border-radius: 12px;
+            background: rgba(0,0,0,0.3);
+            color: #fff;
+            font-size: 1em;
+            resize: none;
+            height: 100px;
+            margin-bottom: 15px;
+        }
+
+        .reason-content textarea:focus {
+            outline: none;
+            border-color: #f39c12;
+        }
+
+        .reason-content .reason-buttons {
+            display: flex;
+            gap: 10px;
+        }
+
+        .reason-content .reason-buttons button {
+            flex: 1;
+        }
+
+        .quick-reasons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 15px;
+        }
+
+        .quick-reason {
+            padding: 8px 12px;
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 20px;
+            background: transparent;
+            color: #aaa;
+            font-size: 0.85em;
+            cursor: pointer;
+        }
+
+        .quick-reason:active {
+            background: rgba(255,255,255,0.1);
+            border-color: #4ecca3;
+            color: #4ecca3;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Login Screen -->
+        <div id="loginScreen">
+            <div class="header">
+                <h1>WAGEPRO</h1>
+                <p class="subtitle">Worker Clock-In System</p>
+            </div>
+
+            <div class="login-box">
+                <div id="loginError" class="message error"></div>
+
+                <div class="form-group">
+                    <label>Enter Your Mobile Number</label>
+                    <input type="tel" id="mobileInput" placeholder="083 123 4567"
+                           autocomplete="tel" inputmode="tel">
+                </div>
+
+                <button class="btn btn-primary" id="loginBtn" onclick="login()">
+                    Clock In / Out
+                </button>
+            </div>
+        </div>
+
+        <!-- Dashboard Screen -->
+        <div id="dashboard" class="dashboard">
+            <div class="worker-info">
+                <div class="worker-name" id="workerName">Worker Name</div>
+                <div class="site-name" id="siteName">Site Name</div>
+            </div>
+
+            <div class="clock-display">
+                <div class="current-time" id="currentTime">--:--</div>
+                <div class="current-date" id="currentDate">Loading...</div>
+            </div>
+
+            <div id="statusMessage" class="message"></div>
+            <div id="distanceWarning" class="distance-warning"></div>
+
+            <div class="gps-status" id="gpsStatus">
+                <div class="gps-dot" id="gpsDot"></div>
+                <span id="gpsText">Getting location...</span>
+            </div>
+
+            <div class="gps-exempt-badge" id="gpsExemptBadge" style="display: none; background: rgba(78,204,163,0.2); border: 1px solid #4ecca3; color: #4ecca3; padding: 10px; border-radius: 10px; text-align: center; margin-bottom: 15px;">
+                GPS Exempt - Can clock in from any location
+            </div>
+
+            <!-- No Work Day Alert Banner -->
+            <div id="noWorkAlertBanner" style="display: none; background: linear-gradient(135deg, #dc2626, #991b1b); border: 2px solid #fca5a5; color: white; padding: 15px; border-radius: 15px; margin-bottom: 15px; text-align: center;">
+                <div style="font-size: 1.5em; margin-bottom: 8px;">NO WORK TODAY</div>
+                <div id="noWorkReason" style="font-size: 1em; margin-bottom: 10px;">Public Holiday</div>
+                <div id="noWorkMessage" style="font-size: 0.9em; color: #fca5a5;"></div>
+            </div>
+
+            <!-- Upcoming No Work Days Alert -->
+            <div id="upcomingNoWorkAlert" style="display: none; background: rgba(251, 146, 60, 0.15); border: 1px solid #f59e0b; color: #f59e0b; padding: 12px; border-radius: 12px; margin-bottom: 15px;">
+                <div style="font-weight: 600; margin-bottom: 8px;">
+                    <span style="font-size: 1.1em;">UPCOMING NO-WORK DAYS</span>
+                </div>
+                <div id="upcomingNoWorkList" style="font-size: 0.9em;"></div>
+                <div id="acknowledgeSection" style="margin-top: 10px; display: none;">
+                    <button id="acknowledgeBtn" onclick="acknowledgeAllAlerts()" style="width: 100%; padding: 10px; background: #f59e0b; color: #1a1a2e; border: none; border-radius: 8px; font-weight: 600; cursor: pointer;">
+                        I ACKNOWLEDGE - I WILL NOT COME TO WORK
+                    </button>
+                </div>
+            </div>
+
+            <div class="status-card">
+                <div class="status-row">
+                    <span class="status-label">Sign In</span>
+                    <span class="status-value" id="signinStatus">--:--</span>
+                </div>
+                <div class="status-row">
+                    <span class="status-label">Sign Out</span>
+                    <span class="status-value" id="signoutStatus">--:--</span>
+                </div>
+                <div class="status-row">
+                    <span class="status-label">Hours Worked</span>
+                    <span class="status-value" id="hoursWorked">--</span>
+                </div>
+            </div>
+
+            <!-- Points Display Card -->
+            <div class="points-card" id="pointsCard">
+                <div class="points-header">
+                    <span class="points-title">Your Points This Period</span>
+                    <span class="points-period" id="pointsPeriod">--</span>
+                </div>
+                <div class="points-display">
+                    <div class="points-item">
+                        <div class="points-value positive" id="rewardsPoints">0</div>
+                        <div class="points-label">Rewards</div>
+                    </div>
+                    <div class="points-item">
+                        <div class="points-value negative" id="penaltiesPoints">0</div>
+                        <div class="points-label">Penalties</div>
+                    </div>
+                    <div class="points-item">
+                        <div class="points-value neutral" id="netPoints">0</div>
+                        <div class="points-label">Net (R<span id="netRandValue">0</span>)</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="clock-buttons">
+                <button type="button" class="btn clock-btn signin" id="signinBtn">
+                    <span class="icon">&#x2192;</span>
+                    <span>SIGN IN</span>
+                </button>
+                <button type="button" class="btn clock-btn signout" id="signoutBtn" disabled>
+                    <span class="icon">&#x2190;</span>
+                    <span>SIGN OUT</span>
+                </button>
+                <!-- Still Working Button (shows after 16:30 when clocked in) -->
+                <button type="button" class="btn clock-btn still-working" id="stillWorkingBtn" style="display: none; background: linear-gradient(135deg, #f59e0b, #d97706); color: white;">
+                    <span class="icon">&#x23F1;</span>
+                    <span>STILL WORKING (OVERTIME)</span>
+                </button>
+            </div>
+
+            <!-- Leave Buttons -->
+            <div class="leave-buttons" id="leaveButtons" style="margin-top: 15px; display: flex; gap: 10px;">
+                <button type="button" class="btn leave-btn" id="bookedLeaveBtn" style="flex: 1; padding: 12px; background: linear-gradient(135deg, #10b981, #059669); color: white; border: none; border-radius: 10px; font-weight: 600;" onclick="showLeaveConfirm('L')">
+                    <span style="display: block; font-size: 1.2em;">L</span>
+                    <span style="font-size: 0.8em;">Booked Leave</span>
+                </button>
+                <button type="button" class="btn leave-btn" id="sickLeaveBtn" style="flex: 1; padding: 12px; background: linear-gradient(135deg, #f59e0b, #d97706); color: white; border: none; border-radius: 10px; font-weight: 600;" onclick="showLeaveConfirm('S')">
+                    <span style="display: block; font-size: 1.2em;">S</span>
+                    <span style="font-size: 0.8em;">Sick Leave</span>
+                </button>
+                <button type="button" class="btn leave-btn" id="notWorkingBtn" style="flex: 1; padding: 12px; background: linear-gradient(135deg, #6b7280, #4b5563); color: white; border: none; border-radius: 10px; font-weight: 600;" onclick="showNotWorkingConfirm()">
+                    <span style="display: block; font-size: 1.2em;">X</span>
+                    <span style="font-size: 0.8em;">Not Working</span>
+                </button>
+            </div>
+
+            <!-- Leave Confirmation Modal -->
+            <div id="leaveConfirmModal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.8); z-index: 1000; padding: 20px;">
+                <div style="background: #1a1a2e; border-radius: 20px; padding: 25px; max-width: 400px; margin: 50px auto;">
+                    <h3 style="color: #4ecca3; margin-bottom: 15px; text-align: center;" id="leaveConfirmTitle">Confirm Leave</h3>
+                    <p style="color: #aaa; margin-bottom: 20px; text-align: center;" id="leaveConfirmText">Are you taking leave today?</p>
+                    <div class="form-group" style="margin-bottom: 15px;">
+                        <label style="color: #aaa; font-size: 0.9em;">Reason (optional)</label>
+                        <input type="text" id="leaveReasonInput" placeholder="e.g., Not feeling well" style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #333; background: #0a0a15; color: white;">
+                    </div>
+                    <div style="display: flex; gap: 10px;">
+                        <button onclick="closeLeaveModal()" style="flex: 1; padding: 15px; background: #333; color: white; border: none; border-radius: 10px; font-weight: 600;">Cancel</button>
+                        <button onclick="submitLeave()" style="flex: 1; padding: 15px; background: #4ecca3; color: #1a1a2e; border: none; border-radius: 10px; font-weight: 600;">Confirm</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Not Working Confirmation Modal -->
+            <div id="notWorkingModal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.8); z-index: 1000; padding: 20px;">
+                <div style="background: #1a1a2e; border-radius: 20px; padding: 25px; max-width: 400px; margin: 50px auto;">
+                    <h3 style="color: #6b7280; margin-bottom: 15px; text-align: center;">Not Working Today</h3>
+                    <p style="color: #aaa; margin-bottom: 20px; text-align: center;">Confirm you are not working today. Your location will be recorded.</p>
+                    <div class="form-group" style="margin-bottom: 15px;">
+                        <label style="color: #aaa; font-size: 0.9em;">Reason (required)</label>
+                        <select id="notWorkingReasonSelect" style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #333; background: #0a0a15; color: white; margin-bottom: 10px;">
+                            <option value="">-- Select reason --</option>
+                            <option value="No transport">No transport</option>
+                            <option value="Family emergency">Family emergency</option>
+                            <option value="Personal reasons">Personal reasons</option>
+                            <option value="Weather conditions">Weather conditions</option>
+                            <option value="No work available">No work available</option>
+                            <option value="Other">Other (specify below)</option>
+                        </select>
+                        <input type="text" id="notWorkingReasonInput" placeholder="Additional details (optional)" style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #333; background: #0a0a15; color: white;">
+                    </div>
+                    <div id="notWorkingGpsStatus" style="color: #888; font-size: 0.85em; margin-bottom: 15px; text-align: center;">
+                        <span id="notWorkingGpsIcon">&#x1F4CD;</span> Getting location...
+                    </div>
+                    <div style="display: flex; gap: 10px;">
+                        <button onclick="closeNotWorkingModal()" style="flex: 1; padding: 15px; background: #333; color: white; border: none; border-radius: 10px; font-weight: 600;">Cancel</button>
+                        <button id="notWorkingSubmitBtn" onclick="submitNotWorking()" style="flex: 1; padding: 15px; background: #6b7280; color: white; border: none; border-radius: 10px; font-weight: 600;">Confirm</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Picture Upload Section -->
+            <div class="picture-section" id="pictureSection" style="display: none;">
+                <h3>Progress Pictures</h3>
+                <div class="picture-count">
+                    <div class="number" id="pictureCount">0</div>
+                    <div class="label">photos uploaded today</div>
+                </div>
+
+                <button class="upload-btn" id="uploadBtn" onclick="document.getElementById('pictureInput').click()">
+                    + Take or Upload Photo
+                </button>
+                <input type="file" id="pictureInput" accept="image/*" capture="environment" onchange="previewPicture(event)">
+
+                <div class="picture-preview" id="picturePreview">
+                    <img id="previewImg" src="" alt="Preview">
+                    <input type="text" class="caption-input" id="captionInput" placeholder="Add description (optional)">
+                    <button class="btn btn-primary" onclick="uploadPicture()">Upload Photo</button>
+                    <button class="btn btn-secondary" onclick="cancelPreview()" style="margin-top: 10px;">Cancel</button>
+                </div>
+
+                <div class="picture-thumbnails" id="pictureThumbs"></div>
+            </div>
+
+            <button class="logout-btn" onclick="logout()">
+                Sign Out of App
+            </button>
+        </div>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="loading-spinner">
+            <div class="spinner"></div>
+            <div id="loadingText">Loading...</div>
+        </div>
+    </div>
+
+    <!-- Override Reason Modal -->
+    <div class="reason-modal" id="reasonModal">
+        <div class="reason-content">
+            <h3 id="reasonTitle">Outside Clock-In Window</h3>
+            <div class="window-info" id="reasonWindowInfo">
+                Clock-in window: <strong>07:00 - 08:30</strong><br>
+                Current time: <strong>09:15</strong>
+            </div>
+            <p style="color: #ccc; margin-bottom: 15px; font-size: 0.95em;">
+                Please provide a reason (e.g., overslept, not feeling well, traffic):
+            </p>
+            <div class="quick-reasons">
+                <button class="quick-reason" onclick="setQuickReason('Not feeling well')">Not feeling well</button>
+                <button class="quick-reason" onclick="setQuickReason('Overslept')">Overslept</button>
+                <button class="quick-reason" onclick="setQuickReason('Traffic/transport issue')">Traffic</button>
+                <button class="quick-reason" onclick="setQuickReason('Family emergency')">Emergency</button>
+                <button class="quick-reason" onclick="setQuickReason('Appointment')">Appointment</button>
+            </div>
+            <textarea id="reasonInput" placeholder="Type your reason here..."></textarea>
+            <div class="reason-buttons">
+                <button class="btn btn-secondary" onclick="closeReasonModal()">Cancel</button>
+                <button class="btn btn-primary" onclick="submitWithReason()">Submit</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Overtime Modal -->
+    <div class="reason-modal" id="overtimeModal">
+        <div class="reason-content">
+            <h3 style="color: #f59e0b;">Working Overtime?</h3>
+            <div class="window-info" id="overtimeWindowInfo">
+                Clock-out window ended: <strong>16:45</strong><br>
+                Current time: <strong id="overtimeCurrentTime">17:30</strong><br>
+                Overtime: <strong id="overtimeMinutes">45</strong> minutes
+            </div>
+            <p style="color: #ccc; margin-bottom: 15px; font-size: 0.95em;">
+                Please select a reason for working overtime:
+            </p>
+            <div class="quick-reasons">
+                <button class="quick-reason" onclick="setOvertimeReason('Rush job')">Rush job</button>
+                <button class="quick-reason" onclick="setOvertimeReason('Finishing task')">Finishing task</button>
+                <button class="quick-reason" onclick="setOvertimeReason('Waiting for delivery')">Delivery</button>
+                <button class="quick-reason" onclick="setOvertimeReason('Client meeting')">Meeting</button>
+                <button class="quick-reason" onclick="setOvertimeReason('Stock take')">Stock take</button>
+            </div>
+            <textarea id="overtimeReasonInput" placeholder="Or type your reason..."></textarea>
+            <div class="reason-buttons">
+                <button class="btn btn-secondary" onclick="closeOvertimeModal()">Cancel</button>
+                <button class="btn btn-primary" style="background: linear-gradient(135deg, #f59e0b, #d97706);" onclick="submitOvertime()">Confirm Overtime</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Still Working Modal (for proactive overtime indication) -->
+    <div class="reason-modal" id="stillWorkingModal">
+        <div class="reason-content">
+            <h3 style="color: #f59e0b;">&#x23F1; Still Working?</h3>
+            <div class="window-info">
+                <strong>You're indicating you will be working overtime.</strong><br>
+                Admin will be notified. You can clock out when done.
+            </div>
+            <p style="color: #ccc; margin-bottom: 15px; font-size: 0.95em;">
+                Please select why you're working overtime:
+            </p>
+            <div class="quick-reasons">
+                <button class="quick-reason" onclick="setStillWorkingReason('Rush job')">Rush job</button>
+                <button class="quick-reason" onclick="setStillWorkingReason('Finishing task')">Finishing task</button>
+                <button class="quick-reason" onclick="setStillWorkingReason('Waiting for delivery')">Delivery</button>
+                <button class="quick-reason" onclick="setStillWorkingReason('Client meeting')">Meeting</button>
+                <button class="quick-reason" onclick="setStillWorkingReason('Stock take')">Stock take</button>
+            </div>
+            <textarea id="stillWorkingReasonInput" placeholder="Or type your reason..."></textarea>
+            <div class="reason-buttons">
+                <button class="btn btn-secondary" onclick="closeStillWorkingModal()">Cancel</button>
+                <button class="btn btn-primary" style="background: linear-gradient(135deg, #f59e0b, #d97706);" onclick="submitStillWorking()">Confirm Overtime</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sign Out Modal with Task Selection and Time Override -->
+    <div class="reason-modal" id="signoutModal">
+        <div class="reason-content" style="max-height: 90vh; overflow-y: auto;">
+            <h3 style="color: #e94560;">Sign Out</h3>
+
+            <!-- Time Override Section -->
+            <div style="margin-bottom: 15px; padding: 12px; background: rgba(0,0,0,0.3); border-radius: 10px;">
+                <label style="color: #888; font-size: 0.85em; display: block; margin-bottom: 8px;">
+                    Actual Sign Out Time <span style="color: #666;">(adjust if different)</span>
+                </label>
+                <div style="display: flex; gap: 10px; align-items: center;">
+                    <input type="time" id="signoutTimeOverride"
+                           style="flex: 1; padding: 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.2); background: #16213e; color: white; font-size: 1.1em;"
+                           onchange="checkTimeOverride()">
+                    <button type="button" onclick="setCurrentTime()" style="padding: 12px 15px; background: #4ecca3; color: #1a1a2e; border: none; border-radius: 8px; font-weight: 600;">Now</button>
+                </div>
+                <p id="timeOverrideInfo" style="color: #888; font-size: 0.8em; margin-top: 8px; display: none;"></p>
+            </div>
+
+            <!-- Overtime Justification (shown when time is late) -->
+            <div id="overtimeJustificationSection" style="display: none; margin-bottom: 15px; padding: 12px; background: rgba(245, 158, 11, 0.15); border: 1px solid #f59e0b; border-radius: 10px;">
+                <div style="color: #f59e0b; font-weight: 600; margin-bottom: 10px;">
+                    ⏰ Overtime Detected
+                </div>
+                <p id="overtimeDetectedInfo" style="color: #ccc; font-size: 0.9em; margin-bottom: 10px;"></p>
+
+                <label style="color: #888; font-size: 0.85em; display: block; margin-bottom: 5px;">Reason for Overtime *</label>
+                <div class="quick-reasons" style="margin-bottom: 10px;">
+                    <button type="button" class="quick-reason" onclick="setOvertimeJustification('Rush job')">Rush job</button>
+                    <button type="button" class="quick-reason" onclick="setOvertimeJustification('Finishing task')">Finishing task</button>
+                    <button type="button" class="quick-reason" onclick="setOvertimeJustification('Client meeting')">Meeting</button>
+                    <button type="button" class="quick-reason" onclick="setOvertimeJustification('Delivery')">Delivery</button>
+                </div>
+                <textarea id="overtimeJustificationInput" placeholder="Type your reason..."
+                          style="width: 100%; padding: 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.2); background: #16213e; color: white; resize: none; height: 60px;"></textarea>
+
+                <!-- Photo Evidence -->
+                <div style="margin-top: 12px;">
+                    <label style="color: #888; font-size: 0.85em; display: block; margin-bottom: 5px;">Photo Evidence (optional)</label>
+                    <button type="button" onclick="document.getElementById('overtimePhotoInput').click()"
+                            style="width: 100%; padding: 12px; border: 2px dashed rgba(245,158,11,0.5); border-radius: 8px; background: transparent; color: #f59e0b; cursor: pointer;">
+                        📷 Take Photo for Evidence
+                    </button>
+                    <input type="file" id="overtimePhotoInput" accept="image/*" capture="environment" style="display: none;" onchange="previewOvertimePhoto(event)">
+                    <div id="overtimePhotoPreview" style="display: none; margin-top: 10px;">
+                        <img id="overtimePreviewImg" src="" style="width: 100%; max-height: 150px; object-fit: cover; border-radius: 8px;">
+                        <button type="button" onclick="clearOvertimePhoto()" style="margin-top: 5px; padding: 5px 10px; background: #666; color: white; border: none; border-radius: 5px; font-size: 0.8em;">Remove Photo</button>
+                    </div>
+                </div>
+            </div>
+
+            <p style="color: #ccc; margin-bottom: 15px; font-size: 0.95em;">
+                What did you work on today? <span style="color: #e94560;">*</span>
+            </p>
+            <div style="margin-bottom: 15px;">
+                <label style="color: #888; font-size: 0.85em; display: block; margin-bottom: 5px;">Project <span style="color: #e94560;">*</span></label>
+                <div style="display: flex; gap: 8px;">
+                    <select id="signoutProjectSelect" onchange="onProjectChange()" style="flex: 1; padding: 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.2); background: #16213e; color: white; font-size: 1em;">
+                        <option value="">-- Select Project --</option>
+                    </select>
+                    <button type="button" id="addProjectBtn" onclick="showCreateProjectModal()" style="display: none; padding: 12px 15px; background: #4ecca3; color: #1a1a2e; border: none; border-radius: 8px; font-weight: 600; white-space: nowrap;">+ New</button>
+                </div>
+                <p id="projectError" style="color: #e94560; font-size: 0.8em; margin-top: 5px; display: none;">Please select a project</p>
+            </div>
+            <div style="margin-bottom: 15px;">
+                <label style="color: #888; font-size: 0.85em; display: block; margin-bottom: 5px;">Task <span style="color: #888;">(optional)</span></label>
+                <div style="display: flex; gap: 8px;">
+                    <select id="signoutTaskSelect" style="flex: 1; padding: 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.2); background: #16213e; color: white; font-size: 1em;">
+                        <option value="">-- Select Task --</option>
+                    </select>
+                    <button type="button" id="addTaskBtn" onclick="showCreateTaskModal()" style="display: none; padding: 12px 15px; background: #3b82f6; color: white; border: none; border-radius: 8px; font-weight: 600; white-space: nowrap;">+ New</button>
+                </div>
+            </div>
+            <div class="reason-buttons">
+                <button class="btn btn-secondary" onclick="closeSignoutModal()">Cancel</button>
+                <button class="btn btn-primary" id="confirmSignoutBtn" style="background: linear-gradient(135deg, #e94560, #c73659);" onclick="confirmSignout()">Sign Out</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sign In Success Modal -->
+    <div class="reason-modal" id="signinSuccessModal">
+        <div class="reason-content" style="text-align: center; padding: 2rem;">
+            <div style="font-size: 5rem; color: #10b981; margin-bottom: 1rem;">✓</div>
+            <h2 style="color: #10b981; margin-bottom: 0.5rem;">Signed In!</h2>
+            <p style="color: #ccc; font-size: 1.1rem; margin-bottom: 0.5rem;">Have a great day at work</p>
+            <p id="signinSuccessTime" style="color: #3b82f6; font-size: 1.3rem; font-weight: bold; margin-bottom: 1.5rem;">Clocked in at 07:30</p>
+            <button class="btn btn-primary" style="background: linear-gradient(135deg, #10b981, #059669); padding: 1rem 2rem; font-size: 1.1rem;" onclick="closeSigninSuccessModal()">OK</button>
+        </div>
+    </div>
+
+    <!-- Sign Out Success Modal -->
+    <div class="reason-modal" id="signoutSuccessModal">
+        <div class="reason-content" style="text-align: center; padding: 2rem;">
+            <div style="font-size: 5rem; color: #10b981; margin-bottom: 1rem;">✓</div>
+            <h2 style="color: #10b981; margin-bottom: 0.5rem;">Signed Out!</h2>
+            <p style="color: #ccc; font-size: 1.1rem; margin-bottom: 0.5rem;">Thank you for your work today</p>
+            <p id="signoutSuccessHours" style="color: #f59e0b; font-size: 1.3rem; font-weight: bold; margin-bottom: 1.5rem;">You worked 8.5 hours</p>
+            <button class="btn btn-primary" style="background: linear-gradient(135deg, #10b981, #059669); padding: 1rem 2rem; font-size: 1.1rem;" onclick="closeSignoutSuccessModal()">OK</button>
+        </div>
+    </div>
+
+    <!-- Create Project Modal (Managers Only) -->
+    <div class="reason-modal" id="createProjectModal">
+        <div class="reason-content">
+            <h3 style="color: #4ecca3;">Create New Project</h3>
+            <p style="color: #ccc; margin-bottom: 15px; font-size: 0.9em;">
+                Add a new project for today's work
+            </p>
+            <div style="margin-bottom: 15px;">
+                <label style="color: #888; font-size: 0.85em; display: block; margin-bottom: 5px;">Project Name</label>
+                <input type="text" id="newProjectName" placeholder="e.g. GARDEN MAINTENANCE"
+                       style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.2); background: #16213e; color: white; font-size: 1em; text-transform: uppercase;">
+            </div>
+            <div class="reason-buttons">
+                <button class="btn btn-secondary" onclick="closeCreateProjectModal()">Cancel</button>
+                <button class="btn btn-primary" style="background: #4ecca3; color: #1a1a2e;" onclick="createNewProject()">Create Project</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Create Task Modal (Managers Only) -->
+    <div class="reason-modal" id="createTaskModal">
+        <div class="reason-content">
+            <h3 style="color: #3b82f6;">Create New Task</h3>
+            <p style="color: #ccc; margin-bottom: 15px; font-size: 0.9em;">
+                Add a new task to the selected project
+            </p>
+            <div style="margin-bottom: 15px;">
+                <label style="color: #888; font-size: 0.85em; display: block; margin-bottom: 5px;">Task Name</label>
+                <input type="text" id="newTaskName" placeholder="e.g. MOWING LAWNS"
+                       style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.2); background: #16213e; color: white; font-size: 1em; text-transform: uppercase;">
+            </div>
+            <div class="reason-buttons">
+                <button class="btn btn-secondary" onclick="closeCreateTaskModal()">Cancel</button>
+                <button class="btn btn-primary" style="background: #3b82f6;" onclick="createNewTask()">Create Task</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // State
+        let token = localStorage.getItem('wagepro_clockin_token');
+        let currentPosition = null;
+        let siteLocation = null;
+        let watchId = null;
+        let selectedFile = null;
+        let isGpsExempt = false;
+        let noWorkAlerts = [];
+        let todayIsNoWork = false;
+        let pendingAction = null;  // 'signin' or 'signout'
+        let pendingWindowInfo = null;  // Window start/end times
+        let allProjects = [];  // For task dropdown
+        let allTasks = [];     // For task dropdown
+        let isManager = false; // Can create projects/tasks on the fly
+
+        // Check if already logged in
+        if (token) {
+            showDashboard();
+        }
+
+        // Update clock every second
+        setInterval(updateClock, 1000);
+        updateClock();
+
+        function updateClock() {
+            const now = new Date();
+            const timeStr = now.toLocaleTimeString('en-ZA', { hour: '2-digit', minute: '2-digit' });
+            const dateStr = now.toLocaleDateString('en-ZA', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+
+            document.getElementById('currentTime').textContent = timeStr;
+            document.getElementById('currentDate').textContent = dateStr;
+        }
+
+        // Login with mobile number
+        async function login() {
+            const mobile = document.getElementById('mobileInput').value.trim();
+            const loginBtn = document.getElementById('loginBtn');
+            const errorDiv = document.getElementById('loginError');
+
+            if (!mobile) {
+                showError('loginError', 'Please enter your mobile number');
+                return;
+            }
+
+            loginBtn.disabled = true;
+            loginBtn.textContent = 'Checking...';
+            errorDiv.style.display = 'none';
+
+            try {
+                const response = await fetch('/api/clockin/worker-login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ mobile })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    token = data.token;
+                    localStorage.setItem('wagepro_clockin_token', token);
+
+                    if (data.site) {
+                        siteLocation = data.site;
+                    }
+
+                    showDashboard();
+                } else {
+                    showError('loginError', data.error || 'Login failed');
+                }
+            } catch (err) {
+                showError('loginError', 'Connection error. Please try again.');
+            }
+
+            loginBtn.disabled = false;
+            loginBtn.textContent = 'Clock In / Out';
+        }
+
+        // Show dashboard
+        async function showDashboard() {
+            document.getElementById('loginScreen').style.display = 'none';
+            document.getElementById('dashboard').style.display = 'block';
+
+            // Start GPS tracking
+            startGPSTracking();
+
+            // Load status
+            await loadStatus();
+        }
+
+        // Start GPS tracking
+        function startGPSTracking() {
+            const gpsDot = document.getElementById('gpsDot');
+            const gpsText = document.getElementById('gpsText');
+
+            gpsDot.className = 'gps-dot searching';
+            gpsText.textContent = 'Getting location...';
+
+            if (!navigator.geolocation) {
+                gpsDot.className = 'gps-dot error';
+                gpsText.textContent = 'GPS not available';
+                return;
+            }
+
+            watchId = navigator.geolocation.watchPosition(
+                (position) => {
+                    currentPosition = {
+                        latitude: position.coords.latitude,
+                        longitude: position.coords.longitude,
+                        accuracy: position.coords.accuracy
+                    };
+
+                    gpsDot.className = 'gps-dot found';
+
+                    // Check distance from site
+                    if (siteLocation && siteLocation.latitude && siteLocation.longitude) {
+                        const distance = haversineDistance(
+                            currentPosition.latitude,
+                            currentPosition.longitude,
+                            siteLocation.latitude,
+                            siteLocation.longitude
+                        );
+
+                        if (distance <= (siteLocation.radius || 100)) {
+                            gpsText.textContent = `At ${siteLocation.name} (${Math.round(distance)}m)`;
+                            document.getElementById('distanceWarning').style.display = 'none';
+                        } else {
+                            gpsText.textContent = `${Math.round(distance)}m from site`;
+                            document.getElementById('distanceWarning').textContent =
+                                `You are ${Math.round(distance)}m away from ${siteLocation.name}. Clock-in may be flagged for review.`;
+                            document.getElementById('distanceWarning').style.display = 'block';
+                        }
+                    } else {
+                        gpsText.textContent = `Location found (${Math.round(currentPosition.accuracy)}m accuracy)`;
+                    }
+                },
+                (error) => {
+                    gpsDot.className = 'gps-dot error';
+                    gpsText.textContent = 'Location error: ' + error.message;
+                },
+                {
+                    enableHighAccuracy: true,
+                    timeout: 10000,
+                    maximumAge: 30000
+                }
+            );
+        }
+
+        // Haversine distance calculation
+        function haversineDistance(lat1, lon1, lat2, lon2) {
+            const R = 6371000; // Earth radius in meters
+            const dLat = (lat2 - lat1) * Math.PI / 180;
+            const dLon = (lon2 - lon1) * Math.PI / 180;
+            const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                      Math.sin(dLon/2) * Math.sin(dLon/2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+            return R * c;
+        }
+
+        // Load status
+        async function loadStatus() {
+            try {
+                const response = await fetch('/api/clockin/status', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                if (response.status === 401) {
+                    logout();
+                    return;
+                }
+
+                const data = await response.json();
+
+                // Update worker info
+                document.getElementById('workerName').textContent = data.staff_name || 'Worker';
+                document.getElementById('siteName').textContent = data.site?.name || 'No site assigned';
+
+                if (data.site) {
+                    siteLocation = data.site;
+                }
+
+                // Update status display based on can_signin/can_signout flags
+                const canSignin = data.can_signin !== undefined ? data.can_signin : !data.has_signin;
+                const canSignout = data.can_signout !== undefined ? data.can_signout : (data.has_signin && !data.has_signout);
+
+                // Show current shift times
+                if (data.has_signin) {
+                    const signinTime = new Date(data.signin_time);
+                    document.getElementById('signinStatus').textContent =
+                        signinTime.toLocaleTimeString('en-ZA', { hour: '2-digit', minute: '2-digit' });
+                    document.getElementById('signinStatus').className = 'status-value success';
+                } else {
+                    document.getElementById('signinStatus').textContent = 'Not signed in';
+                    document.getElementById('signinStatus').className = 'status-value';
+                }
+
+                if (data.has_signout) {
+                    const signoutTime = new Date(data.signout_time);
+                    document.getElementById('signoutStatus').textContent =
+                        signoutTime.toLocaleTimeString('en-ZA', { hour: '2-digit', minute: '2-digit' });
+                    document.getElementById('signoutStatus').className = 'status-value success';
+                } else {
+                    document.getElementById('signoutStatus').textContent = '--:--';
+                    document.getElementById('signoutStatus').className = 'status-value';
+                }
+
+                // Enable/disable buttons based on shift state
+                document.getElementById('signinBtn').disabled = !canSignin;
+                document.getElementById('signoutBtn').disabled = !canSignout;
+
+                // Show picture section if currently signed in (active shift)
+                document.getElementById('pictureSection').style.display = canSignout ? 'block' : 'none';
+
+                // Show shift count if multiple shifts
+                if (data.shift_count > 1) {
+                    document.getElementById('signinStatus').textContent += ` (${data.shift_count} shifts)`;
+                }
+
+                if (data.hours_worked !== null && data.hours_worked > 0) {
+                    document.getElementById('hoursWorked').textContent =
+                        data.hours_worked.toFixed(2) + ' hrs';
+                    document.getElementById('hoursWorked').className = 'status-value success';
+                } else {
+                    document.getElementById('hoursWorked').textContent = '0.00 hrs';
+                    document.getElementById('hoursWorked').className = 'status-value';
+                }
+
+                // Update picture count
+                document.getElementById('pictureCount').textContent = data.picture_count || 0;
+
+                // GPS verification status
+                if (data.gps_verified) {
+                    document.getElementById('distanceWarning').style.display = 'none';
+                }
+
+                // GPS Exempt badge
+                if (data.gps_exempt) {
+                    isGpsExempt = true;
+                    document.getElementById('gpsExemptBadge').style.display = 'block';
+                    document.getElementById('gpsStatus').style.display = 'none';
+                    document.getElementById('distanceWarning').style.display = 'none';
+                }
+
+                // Check for No Work Day alerts
+                await checkNoWorkAlerts(data.staff_id);
+
+                // Load points display
+                await loadMyPoints();
+
+            } catch (err) {
+                console.error('Failed to load status:', err);
+            }
+        }
+
+        // Check for No Work Day alerts
+        async function checkNoWorkAlerts(staffId) {
+            try {
+                const response = await fetch(`/api/staff/no-work-alerts?staff_id=${staffId}`);
+                const data = await response.json();
+
+                if (!data.success) return;
+
+                noWorkAlerts = data.alerts || [];
+                todayIsNoWork = data.today_is_no_work;
+
+                // Show today's no-work banner
+                const todayAlert = noWorkAlerts.find(a => a.is_today);
+                if (todayAlert) {
+                    document.getElementById('noWorkAlertBanner').style.display = 'block';
+                    document.getElementById('noWorkReason').textContent = todayAlert.reason;
+                    if (todayAlert.message) {
+                        document.getElementById('noWorkMessage').textContent = todayAlert.message;
+                        document.getElementById('noWorkMessage').style.display = 'block';
+                    }
+
+                    // Disable sign-in button
+                    document.getElementById('signinBtn').disabled = true;
+                    document.getElementById('signinBtn').style.background = '#666';
+                    document.getElementById('signinBtn').style.cursor = 'not-allowed';
+
+                    // Hide leave buttons on no-work days
+                    document.getElementById('leaveButtons').style.display = 'none';
+                } else {
+                    document.getElementById('noWorkAlertBanner').style.display = 'none';
+                }
+
+                // Show upcoming no-work days
+                const upcomingAlerts = noWorkAlerts.filter(a => !a.is_today);
+                if (upcomingAlerts.length > 0) {
+                    document.getElementById('upcomingNoWorkAlert').style.display = 'block';
+
+                    let listHtml = '';
+                    upcomingAlerts.forEach(alert => {
+                        const ackIcon = alert.acknowledged ? '&check;' : '&bull;';
+                        const ackStyle = alert.acknowledged ? 'color: #4ecca3;' : 'color: #f59e0b;';
+                        listHtml += `<div style="margin: 5px 0; ${ackStyle}">
+                            <span>${ackIcon}</span>
+                            <strong>${alert.date_formatted}</strong>: ${alert.reason}
+                            ${alert.acknowledged ? '<span style="font-size:0.8em;">(Acknowledged)</span>' : ''}
+                        </div>`;
+                    });
+                    document.getElementById('upcomingNoWorkList').innerHTML = listHtml;
+
+                    // Show acknowledge button if any unacknowledged
+                    const unacknowledged = upcomingAlerts.filter(a => !a.acknowledged);
+                    if (unacknowledged.length > 0) {
+                        document.getElementById('acknowledgeSection').style.display = 'block';
+                    } else {
+                        document.getElementById('acknowledgeSection').style.display = 'none';
+                    }
+                } else {
+                    document.getElementById('upcomingNoWorkAlert').style.display = 'none';
+                }
+
+            } catch (err) {
+                console.error('Failed to check no-work alerts:', err);
+            }
+        }
+
+        // Load staff member's points for current period
+        async function loadMyPoints() {
+            try {
+                const response = await fetch('/api/staff/my-points', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                if (!response.ok) {
+                    // Hide points card if API not available
+                    document.getElementById('pointsCard').classList.remove('visible');
+                    return;
+                }
+
+                const data = await response.json();
+
+                if (data.success) {
+                    const pointsCard = document.getElementById('pointsCard');
+                    pointsCard.classList.add('visible');
+
+                    // Update period display
+                    document.getElementById('pointsPeriod').textContent = data.period_name || 'Current Period';
+
+                    // Update points values
+                    const totalRewards = data.total_rewards || 0;
+                    const totalPenalties = data.total_penalties || 0;
+                    const netPoints = data.net_points || 0;
+                    const randValue = data.rand_value || 0;
+
+                    document.getElementById('rewardsPoints').textContent = `+${totalRewards}`;
+                    document.getElementById('penaltiesPoints').textContent = totalPenalties > 0 ? `-${totalPenalties}` : '0';
+                    document.getElementById('netPoints').textContent = netPoints >= 0 ? `+${netPoints}` : netPoints;
+                    document.getElementById('netRandValue').textContent = Math.abs(randValue).toFixed(2);
+
+                    // Update net points color based on value
+                    const netPointsEl = document.getElementById('netPoints');
+                    netPointsEl.className = 'points-value ' + (netPoints >= 0 ? 'positive' : 'negative');
+                } else {
+                    document.getElementById('pointsCard').classList.remove('visible');
+                }
+            } catch (err) {
+                console.error('Failed to load points:', err);
+                document.getElementById('pointsCard').classList.remove('visible');
+            }
+        }
+
+        // Acknowledge all pending no-work alerts
+        async function acknowledgeAllAlerts() {
+            const staffId = parseInt(localStorage.getItem('staff_id'));
+            if (!staffId) return;
+
+            const btn = document.getElementById('acknowledgeBtn');
+            btn.disabled = true;
+            btn.textContent = 'Acknowledging...';
+
+            const unacknowledged = noWorkAlerts.filter(a => !a.acknowledged && !a.is_today);
+
+            for (const alert of unacknowledged) {
+                try {
+                    await fetch(`/api/staff/no-work-alerts/${alert.id}/acknowledge`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ staff_id: staffId })
+                    });
+                } catch (err) {
+                    console.error('Failed to acknowledge alert:', err);
+                }
+            }
+
+            btn.textContent = 'ACKNOWLEDGED';
+            btn.style.background = '#4ecca3';
+
+            // Refresh the alerts
+            setTimeout(() => {
+                checkNoWorkAlerts(staffId);
+            }, 1000);
+        }
+
+        // Sign In
+        async function signIn(overrideReason = null) {
+            // Block sign-in on no-work days
+            if (todayIsNoWork) {
+                showMessage('statusMessage', 'Cannot sign in - NO WORK today', 'error');
+                return;
+            }
+
+            if (!currentPosition && !isGpsExempt) {
+                showMessage('statusMessage', 'Waiting for GPS location...', 'error');
+                return;
+            }
+
+            showLoading('Signing in...');
+
+            try {
+                // For GPS exempt users, send null coordinates
+                const payload = isGpsExempt && !currentPosition ? {
+                    latitude: null,
+                    longitude: null,
+                    accuracy: null
+                } : {
+                    latitude: currentPosition.latitude,
+                    longitude: currentPosition.longitude,
+                    accuracy: currentPosition.accuracy
+                };
+
+                // Add override reason if provided
+                if (overrideReason) {
+                    payload.override_reason = overrideReason;
+                }
+
+                const response = await fetch('/api/clockin/signin', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                const data = await response.json();
+                hideLoading();
+
+                if (data.success) {
+                    // Show success modal with current time
+                    const now = new Date();
+                    const timeStr = now.toLocaleTimeString('en-ZA', { hour: '2-digit', minute: '2-digit' });
+                    showSigninSuccessModal(timeStr);
+                    await loadStatus();
+                } else if (data.requires_reason) {
+                    // Outside time window - show reason modal
+                    pendingAction = 'signin';
+                    pendingWindowInfo = {
+                        window_start: data.window_start,
+                        window_end: data.window_end,
+                        current_time: data.current_time
+                    };
+                    showReasonModal('signin', data);
+                } else {
+                    showMessage('statusMessage', data.error || 'Sign in failed', 'error');
+                }
+            } catch (err) {
+                hideLoading();
+                showMessage('statusMessage', 'Connection error', 'error');
+            }
+        }
+
+        // Show sign-out modal with task selection
+        async function showSignoutModal() {
+            // Load projects/tasks from API
+            try {
+                const response = await fetch('/api/clockin/tasks', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const data = await response.json();
+                console.log('Tasks API response:', data);
+                if (data.error) {
+                    console.error('Tasks API error:', data.error);
+                }
+                allProjects = data.projects || [];
+                allTasks = data.tasks || [];
+                isManager = data.is_manager || false;
+                console.log('allProjects:', allProjects);
+                console.log('allTasks:', allTasks);
+                console.log('isManager:', isManager);
+
+                // Populate project dropdown
+                const projectSelect = document.getElementById('signoutProjectSelect');
+                projectSelect.innerHTML = '<option value="">-- Select Project --</option>';
+                allProjects.forEach(p => {
+                    projectSelect.innerHTML += `<option value="${p.id}">${p.name}</option>`;
+                });
+
+                // Clear task dropdown
+                document.getElementById('signoutTaskSelect').innerHTML = '<option value="">-- Select Task --</option>';
+
+                // Show/hide manager create buttons
+                document.getElementById('addProjectBtn').style.display = isManager ? 'block' : 'none';
+                document.getElementById('addTaskBtn').style.display = isManager ? 'block' : 'none';
+
+                // Hide project error
+                document.getElementById('projectError').style.display = 'none';
+
+            } catch (err) {
+                console.log('Could not load tasks:', err);
+                allProjects = [];
+                allTasks = [];
+                isManager = false;
+            }
+
+            // Show modal - default time based on current time vs configured clockout time
+            // If BEFORE 16:30, use current time (for early departures like "not working" after clock-in)
+            // If AFTER 16:30, use 16:30 (standard end of day assumption)
+            const now = new Date();
+            const clockoutParts = defaultClockoutTime.split(':');
+            const clockoutHour = parseInt(clockoutParts[0]);
+            const clockoutMin = parseInt(clockoutParts[1]);
+            const currentMinutes = now.getHours() * 60 + now.getMinutes();
+            const clockoutMinutes = clockoutHour * 60 + clockoutMin;
+
+            if (currentMinutes < clockoutMinutes) {
+                // Before end of day - use actual current time
+                const hours = String(now.getHours()).padStart(2, '0');
+                const minutes = String(now.getMinutes()).padStart(2, '0');
+                document.getElementById('signoutTimeOverride').value = `${hours}:${minutes}`;
+            } else {
+                // After end of day - default to configured clockout time
+                document.getElementById('signoutTimeOverride').value = defaultClockoutTime;
+            }
+            checkTimeOverride();  // Check if this triggers overtime display
+            document.getElementById('signoutModal').classList.add('show');
+        }
+
+        function closeSignoutModal() {
+            document.getElementById('signoutModal').classList.remove('show');
+            // Reset the modal state
+            document.getElementById('signoutTimeOverride').value = '';
+            document.getElementById('timeOverrideInfo').style.display = 'none';
+            document.getElementById('overtimeJustificationSection').style.display = 'none';
+            document.getElementById('overtimeJustificationInput').value = '';
+            clearOvertimePhoto();
+        }
+
+        // Upload overtime photo
+        async function uploadOvertimePhoto(attendanceId) {
+            if (!overtimePhotoFile) return;
+
+            const formData = new FormData();
+            formData.append('picture', overtimePhotoFile);
+            formData.append('description', 'Overtime evidence');
+            formData.append('attendance_id', attendanceId);
+            formData.append('is_overtime_evidence', 'true');
+
+            if (currentPosition) {
+                formData.append('latitude', currentPosition.latitude);
+                formData.append('longitude', currentPosition.longitude);
+                formData.append('accuracy', currentPosition.accuracy);
+            }
+
+            try {
+                await fetch('/api/clockin/upload-picture', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: formData
+                });
+            } catch (err) {
+                console.error('Failed to upload overtime photo:', err);
+            }
+
+            // Clear the overtime photo
+            overtimePhotoFile = null;
+        }
+
+        function showSigninSuccessModal(timeStr) {
+            document.getElementById('signinSuccessTime').textContent = `Clocked in at ${timeStr}`;
+            document.getElementById('signinSuccessModal').classList.add('show');
+        }
+
+        function closeSigninSuccessModal() {
+            document.getElementById('signinSuccessModal').classList.remove('show');
+        }
+
+        function showSignoutSuccessModal(hoursWorked) {
+            document.getElementById('signoutSuccessHours').textContent = `You worked ${hoursWorked} hours`;
+            document.getElementById('signoutSuccessModal').classList.add('show');
+        }
+
+        function closeSignoutSuccessModal() {
+            document.getElementById('signoutSuccessModal').classList.remove('show');
+        }
+
+        function onProjectChange() {
+            const projectId = document.getElementById('signoutProjectSelect').value;
+            const taskSelect = document.getElementById('signoutTaskSelect');
+
+            console.log('onProjectChange - projectId:', projectId, 'type:', typeof projectId);
+            console.log('allTasks:', allTasks);
+
+            // Hide project error when user selects something
+            if (projectId) {
+                document.getElementById('projectError').style.display = 'none';
+            }
+
+            if (!projectId) {
+                taskSelect.innerHTML = '<option value="">-- Select Task --</option>';
+                return;
+            }
+
+            // Filter tasks for selected project (convert to number for comparison)
+            const projectIdNum = parseInt(projectId);
+            const projectTasks = allTasks.filter(t => t.project_id === projectIdNum);
+            console.log('Filtered tasks for project', projectIdNum, ':', projectTasks);
+
+            taskSelect.innerHTML = '<option value="">-- Select Task --</option>';
+            projectTasks.forEach(t => {
+                // t.id is workpro_id from API (matches backend lookup)
+                taskSelect.innerHTML += `<option value="${t.id}">${t.title}</option>`;
+            });
+        }
+
+        // ===== Manager Create Project/Task Functions =====
+        function showCreateProjectModal() {
+            document.getElementById('newProjectName').value = '';
+            document.getElementById('createProjectModal').classList.add('show');
+            document.getElementById('newProjectName').focus();
+        }
+
+        function closeCreateProjectModal() {
+            document.getElementById('createProjectModal').classList.remove('show');
+        }
+
+        async function createNewProject() {
+            const projectName = document.getElementById('newProjectName').value.trim();
+            if (!projectName) {
+                alert('Please enter a project name');
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/clockin/create-project', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ name: projectName })
+                });
+
+                const data = await response.json();
+                if (data.success) {
+                    // Add new project to list and select it
+                    allProjects.push(data.project);
+                    const projectSelect = document.getElementById('signoutProjectSelect');
+                    projectSelect.innerHTML += `<option value="${data.project.id}">${data.project.name}</option>`;
+                    projectSelect.value = data.project.id;
+                    onProjectChange();  // Update task list
+                    closeCreateProjectModal();
+                } else {
+                    alert(data.error || 'Failed to create project');
+                }
+            } catch (err) {
+                alert('Error creating project: ' + err.message);
+            }
+        }
+
+        function showCreateTaskModal() {
+            const projectId = document.getElementById('signoutProjectSelect').value;
+            if (!projectId) {
+                alert('Please select a project first');
+                return;
+            }
+            document.getElementById('newTaskName').value = '';
+            document.getElementById('createTaskModal').classList.add('show');
+            document.getElementById('newTaskName').focus();
+        }
+
+        function closeCreateTaskModal() {
+            document.getElementById('createTaskModal').classList.remove('show');
+        }
+
+        async function createNewTask() {
+            const taskName = document.getElementById('newTaskName').value.trim();
+            const projectId = document.getElementById('signoutProjectSelect').value;
+
+            if (!taskName) {
+                alert('Please enter a task name');
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/clockin/create-task', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ name: taskName, project_id: parseInt(projectId) })
+                });
+
+                const data = await response.json();
+                if (data.success) {
+                    // Add new task to list and select it
+                    allTasks.push(data.task);
+                    const taskSelect = document.getElementById('signoutTaskSelect');
+                    taskSelect.innerHTML += `<option value="${data.task.id}">${data.task.title}</option>`;
+                    taskSelect.value = data.task.id;
+                    closeCreateTaskModal();
+                } else {
+                    alert(data.error || 'Failed to create task');
+                }
+            } catch (err) {
+                alert('Error creating task: ' + err.message);
+            }
+        }
+
+        // Time override variables
+        let overtimePhotoFile = null;
+        let normalEndTime = '16:45';  // Will be updated from config
+        let defaultClockoutTime = '16:30';  // Will be updated from config
+
+        // Fetch clock times from config
+        async function loadClockConfig() {
+            try {
+                const response = await fetch('/api/clockin/config');
+                const config = await response.json();
+                if (config.clockout_window_end) {
+                    normalEndTime = config.clockout_window_end;
+                }
+                if (config.clockout_time) {
+                    defaultClockoutTime = config.clockout_time;
+                }
+            } catch (err) {
+                console.log('Could not load clock config, using defaults');
+            }
+        }
+        // Load config on page load
+        loadClockConfig();
+
+        function setCurrentTime() {
+            const now = new Date();
+            const hours = String(now.getHours()).padStart(2, '0');
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            document.getElementById('signoutTimeOverride').value = `${hours}:${minutes}`;
+            checkTimeOverride();
+        }
+
+        function checkTimeOverride() {
+            const timeInput = document.getElementById('signoutTimeOverride').value;
+            const infoEl = document.getElementById('timeOverrideInfo');
+            const overtimeSection = document.getElementById('overtimeJustificationSection');
+            const overtimeInfo = document.getElementById('overtimeDetectedInfo');
+
+            if (!timeInput) {
+                infoEl.style.display = 'none';
+                overtimeSection.style.display = 'none';
+                return;
+            }
+
+            // Parse the time
+            const [hours, minutes] = timeInput.split(':').map(Number);
+            const totalMinutes = hours * 60 + minutes;
+
+            // Normal end time (16:45 = 1005 minutes)
+            const [endHours, endMinutes] = normalEndTime.split(':').map(Number);
+            const normalEndMinutes = endHours * 60 + endMinutes;
+
+            // Calculate overtime
+            const overtimeMinutes = totalMinutes - normalEndMinutes;
+
+            if (overtimeMinutes > 0) {
+                // Overtime detected
+                const overtimeHours = Math.floor(overtimeMinutes / 60);
+                const overtimeMins = overtimeMinutes % 60;
+                let overtimeStr = '';
+                if (overtimeHours > 0) {
+                    overtimeStr = `${overtimeHours}h ${overtimeMins}m`;
+                } else {
+                    overtimeStr = `${overtimeMins} minutes`;
+                }
+
+                infoEl.innerHTML = `<span style="color: #f59e0b;">⏰ ${overtimeStr} overtime</span> (normal end: ${normalEndTime})`;
+                infoEl.style.display = 'block';
+
+                overtimeInfo.textContent = `You're signing out ${overtimeStr} after normal end time (${normalEndTime}). Please provide a reason.`;
+                overtimeSection.style.display = 'block';
+            } else if (totalMinutes < normalEndMinutes - 30) {
+                // Early clock out (more than 30 mins early)
+                const earlyMinutes = normalEndMinutes - totalMinutes;
+                infoEl.innerHTML = `<span style="color: #3b82f6;">↩️ ${earlyMinutes} minutes early</span>`;
+                infoEl.style.display = 'block';
+                overtimeSection.style.display = 'none';
+            } else {
+                // Normal time
+                infoEl.innerHTML = `<span style="color: #4ecca3;">✓ Normal clock-out time</span>`;
+                infoEl.style.display = 'block';
+                overtimeSection.style.display = 'none';
+            }
+        }
+
+        function setOvertimeJustification(reason) {
+            document.getElementById('overtimeJustificationInput').value = reason;
+        }
+
+        function previewOvertimePhoto(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            overtimePhotoFile = file;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                document.getElementById('overtimePreviewImg').src = e.target.result;
+                document.getElementById('overtimePhotoPreview').style.display = 'block';
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function clearOvertimePhoto() {
+            overtimePhotoFile = null;
+            document.getElementById('overtimePhotoInput').value = '';
+            document.getElementById('overtimePhotoPreview').style.display = 'none';
+        }
+
+        function confirmSignout() {
+            const timeOverride = document.getElementById('signoutTimeOverride').value;
+            const projectId = document.getElementById('signoutProjectSelect').value;
+            const taskId = document.getElementById('signoutTaskSelect').value || null;
+            const overtimeSection = document.getElementById('overtimeJustificationSection');
+
+            // Project is mandatory
+            if (!projectId) {
+                document.getElementById('projectError').style.display = 'block';
+                document.getElementById('signoutProjectSelect').focus();
+                return;
+            }
+            document.getElementById('projectError').style.display = 'none';
+
+            // If overtime section is visible, check for reason
+            if (overtimeSection.style.display !== 'none') {
+                const reason = document.getElementById('overtimeJustificationInput').value.trim();
+                if (!reason) {
+                    alert('Please provide a reason for overtime');
+                    return;
+                }
+            }
+
+            closeSignoutModal();
+
+            // Build extra params for signout
+            const extraParams = {};
+            extraParams.project_id = parseInt(projectId);  // Always send project
+            if (timeOverride) {
+                extraParams.time_override = timeOverride;
+            }
+            if (overtimeSection.style.display !== 'none') {
+                extraParams.overtime_reason = document.getElementById('overtimeJustificationInput').value.trim();
+                extraParams.has_overtime_photo = !!overtimePhotoFile;
+            }
+
+            signOut(null, true, taskId, extraParams);  // skipConfirm=true, pass taskId and extraParams
+        }
+
+        // Sign Out
+        async function signOut(overrideReason = null, skipConfirm = false, taskId = null, extraParams = {}) {
+            if (!skipConfirm && !confirm('Are you sure you want to sign out?')) return;
+
+            if (!currentPosition && !isGpsExempt) {
+                showMessage('statusMessage', 'Waiting for GPS location...', 'error');
+                return;
+            }
+
+            showLoading('Signing out...');
+
+            try {
+                // For GPS exempt users, send null coordinates
+                const payload = isGpsExempt && !currentPosition ? {
+                    latitude: null,
+                    longitude: null,
+                    accuracy: null
+                } : {
+                    latitude: currentPosition.latitude,
+                    longitude: currentPosition.longitude,
+                    accuracy: currentPosition.accuracy
+                };
+
+                // Add override reason if provided
+                if (overrideReason) {
+                    payload.override_reason = overrideReason;
+                }
+
+                // Add task selection if provided
+                if (taskId) {
+                    payload.task_id = parseInt(taskId);
+                }
+
+                // Add extra params (time override, overtime reason, project_id, etc.)
+                if (extraParams.project_id) {
+                    payload.project_id = extraParams.project_id;
+                }
+                if (extraParams.time_override) {
+                    payload.time_override = extraParams.time_override;
+                }
+                if (extraParams.overtime_reason) {
+                    payload.overtime_reason = extraParams.overtime_reason;
+                }
+
+                // If there's an overtime photo, upload it separately after signout
+                const hasOvertimePhoto = extraParams.has_overtime_photo && overtimePhotoFile;
+
+                const response = await fetch('/api/clockin/signout', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                const data = await response.json();
+
+                // If signout succeeded and there's an overtime photo, upload it
+                if (data.success && hasOvertimePhoto) {
+                    await uploadOvertimePhoto(data.attendance_id);
+                }
+
+                hideLoading();
+
+                if (data.success) {
+                    // Show success modal
+                    showSignoutSuccessModal(data.hours_worked);
+                    await loadStatus();
+                } else if (data.requires_overtime_reason) {
+                    // Late clock-out - ask about overtime
+                    pendingAction = 'signout_overtime';
+                    pendingWindowInfo = {
+                        window_start: data.window_start,
+                        window_end: data.window_end,
+                        current_time: data.current_time,
+                        overtime_minutes: data.overtime_minutes
+                    };
+                    showOvertimeModal(data);
+                } else if (data.requires_reason) {
+                    // Early clock-out - show reason modal
+                    pendingAction = 'signout';
+                    pendingWindowInfo = {
+                        window_start: data.window_start,
+                        window_end: data.window_end,
+                        current_time: data.current_time
+                    };
+                    showReasonModal('signout', data);
+                } else {
+                    showMessage('statusMessage', data.error || 'Sign out failed', 'error');
+                }
+            } catch (err) {
+                hideLoading();
+                showMessage('statusMessage', 'Connection error', 'error');
+            }
+        }
+
+        // Picture handling
+        function previewPicture(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            selectedFile = file;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                document.getElementById('previewImg').src = e.target.result;
+                document.getElementById('picturePreview').style.display = 'block';
+                document.getElementById('uploadBtn').style.display = 'none';
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function cancelPreview() {
+            selectedFile = null;
+            document.getElementById('picturePreview').style.display = 'none';
+            document.getElementById('uploadBtn').style.display = 'block';
+            document.getElementById('pictureInput').value = '';
+            document.getElementById('captionInput').value = '';
+        }
+
+        async function uploadPicture() {
+            if (!selectedFile) return;
+
+            showLoading('Uploading photo...');
+
+            const formData = new FormData();
+            formData.append('picture', selectedFile);
+            formData.append('description', document.getElementById('captionInput').value);
+
+            if (currentPosition) {
+                formData.append('latitude', currentPosition.latitude);
+                formData.append('longitude', currentPosition.longitude);
+                formData.append('accuracy', currentPosition.accuracy);
+            }
+
+            try {
+                const response = await fetch('/api/clockin/upload-picture', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: formData
+                });
+
+                const data = await response.json();
+                hideLoading();
+
+                if (data.success) {
+                    showMessage('statusMessage', 'Photo uploaded!', 'success');
+                    document.getElementById('pictureCount').textContent = data.picture_count;
+                    cancelPreview();
+                } else {
+                    showMessage('statusMessage', data.error || 'Upload failed', 'error');
+                }
+            } catch (err) {
+                hideLoading();
+                showMessage('statusMessage', 'Upload error', 'error');
+            }
+        }
+
+        // Logout
+        function logout() {
+            if (watchId) {
+                navigator.geolocation.clearWatch(watchId);
+            }
+
+            localStorage.removeItem('wagepro_clockin_token');
+            token = null;
+            currentPosition = null;
+
+            document.getElementById('dashboard').style.display = 'none';
+            document.getElementById('loginScreen').style.display = 'block';
+            document.getElementById('mobileInput').value = '';
+        }
+
+        // Utility functions
+        function showLoading(text) {
+            document.getElementById('loadingText').textContent = text || 'Loading...';
+            document.getElementById('loadingOverlay').style.display = 'flex';
+        }
+
+        function hideLoading() {
+            document.getElementById('loadingOverlay').style.display = 'none';
+        }
+
+        function showError(elementId, message) {
+            const el = document.getElementById(elementId);
+            el.textContent = message;
+            el.className = 'message error';
+            el.style.display = 'block';
+            setTimeout(() => { el.style.display = 'none'; }, 5000);
+        }
+
+        function showMessage(elementId, message, type) {
+            const el = document.getElementById(elementId);
+            el.textContent = message;
+            el.className = 'message ' + type;
+            el.style.display = 'block';
+            setTimeout(() => { el.style.display = 'none'; }, 5000);
+        }
+
+        // Override Reason Modal Functions
+        function showReasonModal(action, data) {
+            const modal = document.getElementById('reasonModal');
+            const title = document.getElementById('reasonTitle');
+            const windowInfo = document.getElementById('reasonWindowInfo');
+            const reasonInput = document.getElementById('reasonInput');
+
+            // Set title based on action
+            if (action === 'signin') {
+                title.textContent = 'Outside Clock-In Window';
+            } else {
+                title.textContent = 'Outside Clock-Out Window';
+            }
+
+            // Set window info
+            windowInfo.innerHTML = `
+                ${action === 'signin' ? 'Clock-in' : 'Clock-out'} window: <strong>${data.window_start} - ${data.window_end}</strong><br>
+                Current time: <strong>${data.current_time}</strong>
+            `;
+
+            // Clear previous input
+            reasonInput.value = '';
+
+            // Show modal
+            modal.classList.add('show');
+        }
+
+        function closeReasonModal() {
+            const modal = document.getElementById('reasonModal');
+            modal.classList.remove('show');
+            pendingAction = null;
+            pendingWindowInfo = null;
+        }
+
+        // Overtime modal functions
+        function showOvertimeModal(data) {
+            const modal = document.getElementById('overtimeModal');
+            document.getElementById('overtimeCurrentTime').textContent = data.current_time;
+            document.getElementById('overtimeMinutes').textContent = data.overtime_minutes;
+            document.getElementById('overtimeReasonInput').value = '';
+            modal.classList.add('show');
+        }
+
+        function closeOvertimeModal() {
+            document.getElementById('overtimeModal').classList.remove('show');
+            pendingAction = null;
+            pendingWindowInfo = null;
+        }
+
+        function setOvertimeReason(reason) {
+            document.getElementById('overtimeReasonInput').value = reason;
+        }
+
+        async function submitOvertime() {
+            const reason = document.getElementById('overtimeReasonInput').value.trim();
+            if (!reason) {
+                alert('Please provide a reason for overtime');
+                return;
+            }
+
+            closeOvertimeModal();
+
+            // Sign out with overtime reason
+            showLoading('Signing out with overtime...');
+
+            try {
+                const payload = isGpsExempt && !currentPosition ? {
+                    latitude: null,
+                    longitude: null,
+                    accuracy: null
+                } : {
+                    latitude: currentPosition.latitude,
+                    longitude: currentPosition.longitude,
+                    accuracy: currentPosition.accuracy
+                };
+                payload.overtime_reason = reason;
+
+                const response = await fetch('/api/clockin/signout', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                const data = await response.json();
+                hideLoading();
+
+                if (data.success) {
+                    showMessage('statusMessage', `Signed out! Worked ${data.hours_worked} hours (OVERTIME)`, 'success');
+                    await loadStatus();
+                } else {
+                    showMessage('statusMessage', data.error || 'Sign out failed', 'error');
+                }
+            } catch (err) {
+                hideLoading();
+                showMessage('statusMessage', 'Connection error', 'error');
+            }
+        }
+
+
+        function setQuickReason(reason) {
+            document.getElementById('reasonInput').value = reason;
+        }
+
+        async function submitWithReason() {
+            const reason = document.getElementById('reasonInput').value.trim();
+
+            if (!reason) {
+                alert('Please enter a reason');
+                return;
+            }
+
+            // Save pending action before closing modal (closeReasonModal clears it)
+            const action = pendingAction;
+
+            closeReasonModal();
+
+            // Call the appropriate function with the reason
+            if (action === 'signin') {
+                await signIn(reason);
+            } else if (action === 'signout') {
+                await signOut(reason, true);  // skipConfirm=true since they already confirmed
+            }
+        }
+
+        // Attach event listeners after DOM is ready (more reliable than inline onclick)
+        document.addEventListener('DOMContentLoaded', function() {
+            // Sign In button
+            const signinBtn = document.getElementById('signinBtn');
+            if (signinBtn) {
+                signinBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    signIn();
+                });
+                // Also handle touch for mobile
+                signinBtn.addEventListener('touchend', function(e) {
+                    e.preventDefault();
+                    signIn();
+                });
+            }
+
+            // Sign Out button
+            const signoutBtn = document.getElementById('signoutBtn');
+            if (signoutBtn) {
+                signoutBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    showSignoutModal();  // Show modal instead of direct signOut
+                });
+                signoutBtn.addEventListener('touchend', function(e) {
+                    e.preventDefault();
+                    if (!signoutBtn.disabled) {
+                        showSignoutModal();  // Show modal instead of direct signOut
+                    }
+                });
+            }
+
+            // Login button
+            const loginBtn = document.getElementById('loginBtn');
+            if (loginBtn) {
+                loginBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    login();
+                });
+            }
+
+            // Allow Enter key on mobile input
+            const mobileInput = document.getElementById('mobileInput');
+            if (mobileInput) {
+                mobileInput.addEventListener('keypress', function(e) {
+                    if (e.key === 'Enter') {
+                        login();
+                    }
+                });
+
+                // Pre-fill mobile number from URL parameter
+                const urlParams = new URLSearchParams(window.location.search);
+                const mobileParam = urlParams.get('m');
+                if (mobileParam) {
+                    mobileInput.value = mobileParam;
+                    // Auto-login if mobile provided
+                    setTimeout(() => login(), 500);
+                }
+            }
+        });
+
+        // ===== LEAVE FUNCTIONS =====
+        let pendingLeaveType = null;
+
+        function showLeaveConfirm(leaveType) {
+            pendingLeaveType = leaveType;
+            const title = leaveType === 'L' ? 'Booked Leave' : 'Sick Leave';
+            const text = leaveType === 'L'
+                ? 'Confirm you are taking booked leave today.'
+                : 'Confirm you are taking sick leave today.';
+
+            document.getElementById('leaveConfirmTitle').textContent = title;
+            document.getElementById('leaveConfirmText').textContent = text;
+            document.getElementById('leaveReasonInput').value = '';
+            document.getElementById('leaveConfirmModal').style.display = 'block';
+        }
+
+        function closeLeaveModal() {
+            document.getElementById('leaveConfirmModal').style.display = 'none';
+            pendingLeaveType = null;
+        }
+
+        async function submitLeave() {
+            if (!pendingLeaveType) return;
+
+            const reason = document.getElementById('leaveReasonInput').value || '';
+            const today = new Date().toISOString().split('T')[0];
+
+            try {
+                const response = await fetch('/api/clockin/leave', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + localStorage.getItem('wagepro_clockin_token')
+                    },
+                    body: JSON.stringify({
+                        leave_type: pendingLeaveType,
+                        leave_date: today,
+                        reason: reason
+                    })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    closeLeaveModal();
+                    const typeLabel = pendingLeaveType === 'L' ? 'Booked Leave' : 'Sick Leave';
+                    alert(typeLabel + ' recorded for today. You do not need to clock in.');
+                    // Disable sign in and leave buttons
+                    document.getElementById('signinBtn').disabled = true;
+                    document.getElementById('leaveButtons').style.display = 'none';
+                    // Show leave status
+                    document.getElementById('signinStatus').textContent = typeLabel;
+                    document.getElementById('signinStatus').className = 'status-value';
+                    document.getElementById('signinStatus').style.color = pendingLeaveType === 'L' ? '#10b981' : '#f59e0b';
+                } else {
+                    alert('Error: ' + (data.error || 'Failed to record leave'));
+                }
+            } catch (error) {
+                console.error('Leave error:', error);
+                alert('Error recording leave. Please try again.');
+            }
+        }
+
+        // Check if already on leave today
+        async function checkLeaveStatus() {
+            try {
+                const response = await fetch('/api/clockin/leave-status', {
+                    headers: {
+                        'Authorization': 'Bearer ' + localStorage.getItem('wagepro_clockin_token')
+                    }
+                });
+                const data = await response.json();
+
+                if (data.on_leave) {
+                    const typeLabel = data.leave_type === 'L' ? 'Booked Leave' : 'Sick Leave';
+                    document.getElementById('signinBtn').disabled = true;
+                    document.getElementById('signoutBtn').disabled = true;
+                    document.getElementById('leaveButtons').style.display = 'none';
+                    document.getElementById('signinStatus').textContent = typeLabel;
+                    document.getElementById('signinStatus').style.color = data.leave_type === 'L' ? '#10b981' : '#f59e0b';
+                }
+            } catch (error) {
+                console.error('Leave status check error:', error);
+            }
+        }
+
+        // ===== NOT WORKING FUNCTIONS =====
+        let notWorkingGps = null;
+
+        function showNotWorkingConfirm() {
+            document.getElementById('notWorkingReasonSelect').value = '';
+            document.getElementById('notWorkingReasonInput').value = '';
+            document.getElementById('notWorkingModal').style.display = 'block';
+            document.getElementById('notWorkingSubmitBtn').disabled = true;
+            notWorkingGps = null;
+
+            // Start getting GPS
+            document.getElementById('notWorkingGpsStatus').innerHTML = '<span>&#x1F4CD;</span> Getting location...';
+
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    (position) => {
+                        notWorkingGps = {
+                            latitude: position.coords.latitude,
+                            longitude: position.coords.longitude,
+                            accuracy: position.coords.accuracy
+                        };
+                        document.getElementById('notWorkingGpsStatus').innerHTML =
+                            '<span style="color: #4ecca3;">&#x2713;</span> Location captured';
+                        document.getElementById('notWorkingSubmitBtn').disabled = false;
+                    },
+                    (error) => {
+                        console.error('GPS error:', error);
+                        document.getElementById('notWorkingGpsStatus').innerHTML =
+                            '<span style="color: #f59e0b;">&#x26A0;</span> Location unavailable - will submit without GPS';
+                        document.getElementById('notWorkingSubmitBtn').disabled = false;
+                    },
+                    { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
+                );
+            } else {
+                document.getElementById('notWorkingGpsStatus').innerHTML =
+                    '<span style="color: #f59e0b;">&#x26A0;</span> GPS not supported';
+                document.getElementById('notWorkingSubmitBtn').disabled = false;
+            }
+        }
+
+        function closeNotWorkingModal() {
+            document.getElementById('notWorkingModal').style.display = 'none';
+            notWorkingGps = null;
+        }
+
+        async function submitNotWorking() {
+            const reasonSelect = document.getElementById('notWorkingReasonSelect').value;
+            const reasonInput = document.getElementById('notWorkingReasonInput').value;
+
+            if (!reasonSelect) {
+                alert('Please select a reason');
+                return;
+            }
+
+            // Build full reason
+            let reason = reasonSelect;
+            if (reasonSelect === 'Other' && reasonInput) {
+                reason = reasonInput;
+            } else if (reasonInput) {
+                reason = reasonSelect + ' - ' + reasonInput;
+            }
+
+            try {
+                document.getElementById('notWorkingSubmitBtn').disabled = true;
+                document.getElementById('notWorkingSubmitBtn').textContent = 'Submitting...';
+
+                const response = await fetch('/api/clockin/not-working', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + localStorage.getItem('wagepro_clockin_token')
+                    },
+                    body: JSON.stringify({
+                        reason: reason,
+                        latitude: notWorkingGps?.latitude || null,
+                        longitude: notWorkingGps?.longitude || null,
+                        accuracy: notWorkingGps?.accuracy || null
+                    })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    closeNotWorkingModal();
+                    alert('Response recorded. You have confirmed you are not working today.');
+                    // Disable sign in and leave buttons
+                    document.getElementById('signinBtn').disabled = true;
+                    document.getElementById('leaveButtons').style.display = 'none';
+                    // Show status
+                    document.getElementById('signinStatus').textContent = 'Not Working';
+                    document.getElementById('signinStatus').className = 'status-value';
+                    document.getElementById('signinStatus').style.color = '#6b7280';
+                } else {
+                    alert('Error: ' + (data.error || 'Failed to record response'));
+                }
+            } catch (error) {
+                console.error('Not working error:', error);
+                alert('Error recording response. Please try again.');
+            } finally {
+                document.getElementById('notWorkingSubmitBtn').disabled = false;
+                document.getElementById('notWorkingSubmitBtn').textContent = 'Confirm';
+            }
+        }
+
+        // Add leave status check to loadStatus
+        const originalLoadStatus = loadStatus;
+        loadStatus = async function() {
+            await originalLoadStatus();
+            await checkLeaveStatus();
+            checkStillWorkingButton();
+        };
+
+        // ===== STILL WORKING (PROACTIVE OVERTIME) FUNCTIONS =====
+
+        function checkStillWorkingButton() {
+            // Show "Still Working" button after 16:30 when clocked in
+            const now = new Date();
+            const hours = now.getHours();
+            const minutes = now.getMinutes();
+            const currentMinutes = hours * 60 + minutes;
+
+            // 16:30 = 990 minutes
+            const showAfterMinutes = 16 * 60 + 30;
+
+            const signoutBtn = document.getElementById('signoutBtn');
+            const stillWorkingBtn = document.getElementById('stillWorkingBtn');
+
+            // Show if it's after 16:30 AND worker is clocked in (signout enabled)
+            if (currentMinutes >= showAfterMinutes && signoutBtn && !signoutBtn.disabled) {
+                if (stillWorkingBtn) {
+                    stillWorkingBtn.style.display = 'flex';
+                }
+            } else {
+                if (stillWorkingBtn) {
+                    stillWorkingBtn.style.display = 'none';
+                }
+            }
+        }
+
+        function showStillWorkingModal() {
+            const modal = document.getElementById('stillWorkingModal');
+            document.getElementById('stillWorkingReasonInput').value = '';
+            modal.classList.add('show');
+        }
+
+        function closeStillWorkingModal() {
+            document.getElementById('stillWorkingModal').classList.remove('show');
+        }
+
+        function setStillWorkingReason(reason) {
+            document.getElementById('stillWorkingReasonInput').value = reason;
+        }
+
+        async function submitStillWorking() {
+            const reason = document.getElementById('stillWorkingReasonInput').value.trim();
+            if (!reason) {
+                alert('Please provide a reason for working overtime');
+                return;
+            }
+
+            closeStillWorkingModal();
+            showLoading('Notifying admin...');
+
+            try {
+                const response = await fetch('/api/clockin/still-working', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ reason: reason })
+                });
+
+                const data = await response.json();
+                hideLoading();
+
+                if (data.success) {
+                    showMessage('statusMessage', 'Admin notified - you can clock out when done!', 'success');
+                    // Hide the still working button after submission
+                    document.getElementById('stillWorkingBtn').style.display = 'none';
+                } else {
+                    showMessage('statusMessage', data.error || 'Failed to notify', 'error');
+                }
+            } catch (err) {
+                hideLoading();
+                showMessage('statusMessage', 'Connection error', 'error');
+            }
+        }
+
+        // Add event listener for Still Working button
+        document.addEventListener('DOMContentLoaded', function() {
+            const stillWorkingBtn = document.getElementById('stillWorkingBtn');
+            if (stillWorkingBtn) {
+                stillWorkingBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    showStillWorkingModal();
+                });
+            }
+        });
+
+        // Check button visibility every minute
+        setInterval(checkStillWorkingButton, 60000);
+    </script>
+</body>
+</html>

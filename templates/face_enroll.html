@@ -1,0 +1,1014 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WAGEPRO - Face Enrollment</title>
+    <script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header h1 {
+            color: #667eea;
+            font-size: 1.8em;
+        }
+
+        .header-buttons {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-secondary {
+            background: #6b7280;
+            color: white;
+        }
+
+        .btn-success {
+            background: #10b981;
+            color: white;
+        }
+
+        .btn-danger {
+            background: #ef4444;
+            color: white;
+        }
+
+        .btn:hover {
+            opacity: 0.9;
+            transform: translateY(-1px);
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        @media (max-width: 900px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+            .header {
+                flex-direction: column;
+                gap: 15px;
+                text-align: center;
+            }
+            .header h1 {
+                font-size: 1.4em;
+            }
+            .header-buttons {
+                width: 100%;
+                justify-content: center;
+            }
+            .summary-cards {
+                grid-template-columns: repeat(3, 1fr);
+                gap: 8px;
+            }
+            .summary-card .number {
+                font-size: 1.5em;
+            }
+            .summary-card .label {
+                font-size: 0.75em;
+            }
+        }
+
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        }
+
+        .card h2 {
+            color: #374151;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #e5e7eb;
+        }
+
+        /* Camera Section */
+        .camera-container {
+            position: relative;
+            width: 100%;
+            aspect-ratio: 4/3;
+            background: #1a1a2e;
+            border-radius: 12px;
+            overflow: hidden;
+            margin-bottom: 15px;
+        }
+
+        #video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transform: scaleX(-1);
+        }
+
+        #overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            transform: scaleX(-1);
+        }
+
+        .camera-status {
+            position: absolute;
+            bottom: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0,0,0,0.7);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.9em;
+        }
+
+        /* Staff Selection */
+        .staff-select {
+            margin-bottom: 15px;
+        }
+
+        .staff-select select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            font-size: 1rem;
+            background: white;
+        }
+
+        .staff-select select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        /* Enrollment Status */
+        .enrollment-info {
+            background: #f3f4f6;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+        }
+
+        .enrollment-info p {
+            margin: 5px 0;
+            color: #374151;
+        }
+
+        .enrollment-info .label {
+            font-weight: 600;
+            color: #6b7280;
+        }
+
+        .enrollment-info .status-enrolled {
+            color: #10b981;
+            font-weight: bold;
+        }
+
+        .enrollment-info .status-not-enrolled {
+            color: #ef4444;
+            font-weight: bold;
+        }
+
+        /* Staff List */
+        .staff-list {
+            max-height: 500px;
+            overflow-y: auto;
+        }
+
+        .staff-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px;
+            border-bottom: 1px solid #e5e7eb;
+        }
+
+        .staff-item:last-child {
+            border-bottom: none;
+        }
+
+        .staff-item:hover {
+            background: #f9fafb;
+        }
+
+        .staff-info {
+            flex: 1;
+        }
+
+        .staff-name {
+            font-weight: 600;
+            color: #374151;
+        }
+
+        .staff-site {
+            font-size: 0.85em;
+            color: #6b7280;
+        }
+
+        .staff-status {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .badge {
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.8em;
+            font-weight: 600;
+        }
+
+        .badge-success {
+            background: #d1fae5;
+            color: #059669;
+        }
+
+        .badge-warning {
+            background: #fef3c7;
+            color: #d97706;
+        }
+
+        /* Summary Cards */
+        .summary-cards {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .summary-card {
+            background: #f9fafb;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .summary-card .number {
+            font-size: 2em;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .summary-card .label {
+            color: #6b7280;
+            font-size: 0.9em;
+        }
+
+        /* Loading */
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.7);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .loading-overlay.show {
+            display: flex;
+        }
+
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid rgba(255,255,255,0.2);
+            border-top-color: #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .loading-text {
+            color: white;
+            font-size: 1.1em;
+        }
+
+        /* Messages */
+        .message {
+            padding: 12px 20px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            display: none;
+        }
+
+        .message.show {
+            display: block;
+        }
+
+        .message.success {
+            background: #d1fae5;
+            color: #059669;
+        }
+
+        .message.error {
+            background: #fee2e2;
+            color: #dc2626;
+        }
+
+        /* Capture Preview */
+        .capture-preview {
+            display: none;
+            margin-bottom: 15px;
+        }
+
+        .capture-preview.show {
+            display: block;
+        }
+
+        .capture-preview img {
+            width: 100%;
+            border-radius: 8px;
+            border: 3px solid #10b981;
+        }
+
+        .capture-preview .preview-label {
+            text-align: center;
+            color: #10b981;
+            font-weight: 600;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Face Enrollment</h1>
+            <div class="header-buttons">
+                <a href="/kiosk" class="btn btn-success" target="_blank">Open Kiosk</a>
+                <a href="/" class="btn btn-secondary">Back to Dashboard</a>
+            </div>
+        </div>
+
+        <div class="main-content">
+            <!-- Enrollment Section -->
+            <div class="card">
+                <h2>Enroll Staff Face</h2>
+
+                <div class="message" id="message"></div>
+
+                <!-- STEP 1: Select Staff - Prominent reminder -->
+                <div id="selectStaffReminder" style="background: #fef3c7; border: 2px solid #f59e0b; padding: 15px; border-radius: 8px; margin-bottom: 15px; text-align: center;">
+                    <div style="font-size: 1.3em; font-weight: bold; color: #92400e; margin-bottom: 8px;">
+                        STEP 1: SELECT STAFF MEMBER FIRST
+                    </div>
+                    <div style="color: #b45309; font-size: 0.95em;">
+                        Choose who to enroll from the dropdown below
+                    </div>
+                </div>
+
+                <div class="staff-select" id="staffSelectContainer">
+                    <select id="staffSelect" onchange="selectStaff()" style="font-size: 1.1em; padding: 15px; border: 2px solid #667eea;">
+                        <option value="">-- SELECT STAFF MEMBER --</option>
+                    </select>
+                </div>
+
+                <!-- Show selected staff name after selection (replaces dropdown) -->
+                <div id="selectedStaffBanner" style="display: none; background: #d1fae5; border: 2px solid #10b981; padding: 15px; border-radius: 8px; margin-bottom: 15px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                            <div style="font-size: 0.85em; color: #059669; margin-bottom: 4px;">ENROLLING:</div>
+                            <div style="font-size: 1.3em; font-weight: bold; color: #065f46;" id="selectedStaffName">-</div>
+                        </div>
+                        <button class="btn btn-secondary" onclick="changeStaff()" style="padding: 8px 15px;">
+                            Change
+                        </button>
+                    </div>
+                </div>
+
+                <div class="enrollment-info" id="enrollmentInfo" style="display: none;">
+                    <p><span class="label">Name:</span> <span id="selectedName">-</span></p>
+                    <p><span class="label">Site:</span> <span id="selectedSite">-</span></p>
+                    <p><span class="label">Status:</span> <span id="selectedStatus">-</span></p>
+                    <p><span class="label">Enrolled:</span> <span id="selectedEnrolled">-</span></p>
+                </div>
+
+                <!-- Camera container - dimmed until staff selected -->
+                <div class="camera-container" id="cameraContainer" style="position: relative;">
+                    <!-- Overlay blocking camera until staff selected -->
+                    <div id="cameraBlocker" style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); z-index: 10; display: flex; align-items: center; justify-content: center; flex-direction: column; border-radius: 12px;">
+                        <div style="color: #f59e0b; font-size: 1.5em; font-weight: bold; text-align: center; padding: 20px;">
+                            SELECT STAFF FIRST
+                        </div>
+                        <div style="color: white; font-size: 1em; text-align: center;">
+                            Use dropdown above
+                        </div>
+                    </div>
+                    <video id="video" autoplay muted playsinline></video>
+                    <canvas id="overlay"></canvas>
+                    <div class="camera-status" id="cameraStatus">Loading camera...</div>
+                    <button class="btn btn-secondary" id="switchCameraBtn" onclick="switchCamera()" style="position: absolute; top: 10px; right: 10px; padding: 8px 12px; font-size: 0.85em;">
+                        Switch Camera
+                    </button>
+                </div>
+
+                <div class="capture-preview" id="capturePreview">
+                    <img id="previewImage" src="" alt="Captured face">
+                    <div class="preview-label">Face captured - Ready to enroll</div>
+                </div>
+
+                <div id="holdStillWarning" style="display: none; background: #fef3c7; color: #92400e; padding: 12px; border-radius: 8px; margin-bottom: 10px; text-align: center; font-weight: 600; font-size: 1.1em;">
+                    HOLD STILL - Analyzing face...
+                </div>
+
+                <!-- Buttons: Only Retake and Enroll shown after auto-capture -->
+                <div style="display: flex; gap: 10px;" id="enrollButtons" style="display: none;">
+                    <button class="btn btn-secondary" id="retakeBtn" onclick="resetCaptureUI()" style="flex: 1; display: none;">
+                        Retake
+                    </button>
+                    <button class="btn btn-success" id="enrollBtn" onclick="enrollFace()" disabled style="flex: 1; display: none;">
+                        Enroll Face
+                    </button>
+                </div>
+            </div>
+
+            <!-- Enrolled Staff List -->
+            <div class="card">
+                <h2>Enrollment Status</h2>
+
+                <div class="summary-cards">
+                    <div class="summary-card">
+                        <div class="number" id="totalStaff">0</div>
+                        <div class="label">Total Staff</div>
+                    </div>
+                    <div class="summary-card">
+                        <div class="number" id="enrolledCount">0</div>
+                        <div class="label">Enrolled</div>
+                    </div>
+                    <div class="summary-card">
+                        <div class="number" id="notEnrolledCount">0</div>
+                        <div class="label">Not Enrolled</div>
+                    </div>
+                </div>
+
+                <div class="staff-list" id="staffList">
+                    <!-- Staff items will be loaded here -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="spinner"></div>
+        <div class="loading-text" id="loadingText">Loading...</div>
+    </div>
+
+    <script>
+        // State
+        let token = localStorage.getItem('wagepro_token');
+        let video = null;
+        let canvas = null;
+        let ctx = null;
+        let isModelLoaded = false;
+        let selectedStaffId = null;
+        let capturedDescriptor = null;
+        let staffData = [];
+        let currentFacingMode = 'user';  // 'user' = front, 'environment' = back
+        let currentStream = null;
+
+        // Check authentication
+        if (!token) {
+            window.location.href = '/';
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', async () => {
+            await loadFaceApiModels();
+            await loadEnrollmentStatus();
+            await startCamera();
+        });
+
+        // Load face-api.js models
+        async function loadFaceApiModels() {
+            showLoading('Loading face recognition models...');
+            try {
+                const MODEL_URL = 'https://cdn.jsdelivr.net/npm/@vladmandic/face-api/model';
+
+                await Promise.all([
+                    faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL),
+                    faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL),
+                    faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL)
+                ]);
+
+                isModelLoaded = true;
+                console.log('Face-api models loaded');
+                hideLoading();
+            } catch (err) {
+                console.error('Failed to load models:', err);
+                hideLoading();
+                showMessage('Failed to load face recognition models', 'error');
+            }
+        }
+
+        // Load enrollment status from server
+        async function loadEnrollmentStatus() {
+            try {
+                const response = await fetch('/api/kiosk/enrollment-status', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                if (response.status === 401) {
+                    window.location.href = '/';
+                    return;
+                }
+
+                const data = await response.json();
+
+                if (data.success) {
+                    staffData = data.staff;
+                    updateSummary(data);
+                    updateStaffList(data.staff);
+                    updateStaffSelect(data.staff);
+                }
+            } catch (err) {
+                console.error('Failed to load enrollment status:', err);
+            }
+        }
+
+        // Update summary cards
+        function updateSummary(data) {
+            document.getElementById('totalStaff').textContent = data.total;
+            document.getElementById('enrolledCount').textContent = data.enrolled;
+            document.getElementById('notEnrolledCount').textContent = data.not_enrolled;
+        }
+
+        // Update staff list
+        function updateStaffList(staff) {
+            const container = document.getElementById('staffList');
+            container.innerHTML = '';
+
+            for (const s of staff) {
+                const item = document.createElement('div');
+                item.className = 'staff-item';
+                item.innerHTML = `
+                    <div class="staff-info">
+                        <div class="staff-name">${s.name}</div>
+                        <div class="staff-site">${s.site || 'No site'}</div>
+                    </div>
+                    <div class="staff-status">
+                        ${s.enrolled
+                            ? `<span class="badge badge-success">Enrolled</span>
+                               <button class="btn btn-danger" style="padding: 5px 10px; font-size: 0.8em;" onclick="unenrollStaff(${s.id}, '${s.name}')">Remove</button>`
+                            : `<span class="badge badge-warning">Not Enrolled</span>
+                               <button class="btn btn-primary" style="padding: 5px 10px; font-size: 0.8em;" onclick="selectStaffById(${s.id})">Enroll</button>`
+                        }
+                    </div>
+                `;
+                container.appendChild(item);
+            }
+        }
+
+        // Update staff dropdown
+        function updateStaffSelect(staff) {
+            const select = document.getElementById('staffSelect');
+            select.innerHTML = '<option value="">-- Select Staff Member --</option>';
+
+            for (const s of staff) {
+                const opt = document.createElement('option');
+                opt.value = s.id;
+                opt.textContent = `${s.name} ${s.enrolled ? '(enrolled)' : ''}`;
+                select.appendChild(opt);
+            }
+        }
+
+        // Select staff from dropdown
+        function selectStaff() {
+            const select = document.getElementById('staffSelect');
+            const staffId = parseInt(select.value);
+
+            if (!staffId) {
+                changeStaff();  // Reset to initial state
+                return;
+            }
+
+            selectStaffById(staffId);
+        }
+
+        // Select staff by ID
+        function selectStaffById(staffId) {
+            selectedStaffId = staffId;
+            document.getElementById('staffSelect').value = staffId;
+
+            const staff = staffData.find(s => s.id === staffId);
+            if (staff) {
+                document.getElementById('selectedName').textContent = staff.name;
+                document.getElementById('selectedSite').textContent = staff.site || 'No site';
+
+                const statusEl = document.getElementById('selectedStatus');
+                if (staff.enrolled) {
+                    statusEl.innerHTML = '<span class="status-enrolled">Enrolled</span>';
+                } else {
+                    statusEl.innerHTML = '<span class="status-not-enrolled">Not Enrolled</span>';
+                }
+
+                document.getElementById('selectedEnrolled').textContent =
+                    staff.enrolled_at ? new Date(staff.enrolled_at).toLocaleString() : 'Never';
+
+                document.getElementById('enrollmentInfo').style.display = 'block';
+
+                // Hide the "select staff first" reminders AND the dropdown
+                document.getElementById('selectStaffReminder').style.display = 'none';
+                document.getElementById('staffSelectContainer').style.display = 'none';
+                document.getElementById('cameraBlocker').style.display = 'none';
+
+                // Show selected staff banner with name
+                document.getElementById('selectedStaffName').textContent = staff.name;
+                document.getElementById('selectedStaffBanner').style.display = 'block';
+
+                // Reset capture UI
+                resetCaptureUI();
+            }
+        }
+
+        // Change staff (show dropdown again)
+        function changeStaff() {
+            selectedStaffId = null;
+            document.getElementById('staffSelect').value = '';
+
+            // Show Step 1 reminder and dropdown again
+            document.getElementById('selectStaffReminder').style.display = 'block';
+            document.getElementById('staffSelectContainer').style.display = 'block';
+            document.getElementById('cameraBlocker').style.display = 'flex';
+
+            // Hide selected staff banner
+            document.getElementById('selectedStaffBanner').style.display = 'none';
+            document.getElementById('enrollmentInfo').style.display = 'none';
+
+            // Reset capture UI
+            resetCaptureUI();
+        }
+
+        // Reset capture UI to show camera, hide preview
+        function resetCaptureUI() {
+            capturedDescriptor = null;
+            isCapturing = false;
+            consecutiveDetections = 0;
+            document.getElementById('capturePreview').classList.remove('show');
+            // Show camera again
+            document.getElementById('cameraContainer').style.display = 'block';
+            // Hide Retake and Enroll buttons (auto-capture will trigger)
+            document.getElementById('retakeBtn').style.display = 'none';
+            document.getElementById('enrollBtn').style.display = 'none';
+            document.getElementById('enrollBtn').disabled = true;
+        }
+
+        // Start camera
+        async function startCamera() {
+            try {
+                video = document.getElementById('video');
+                canvas = document.getElementById('overlay');
+
+                // Stop existing stream if any
+                if (currentStream) {
+                    currentStream.getTracks().forEach(track => track.stop());
+                }
+
+                const stream = await navigator.mediaDevices.getUserMedia({
+                    video: {
+                        facingMode: currentFacingMode,
+                        width: { ideal: 640 },
+                        height: { ideal: 480 }
+                    }
+                });
+
+                currentStream = stream;
+                video.srcObject = stream;
+                await video.play();
+
+                canvas.width = video.videoWidth;
+                canvas.height = video.videoHeight;
+                ctx = canvas.getContext('2d');
+
+                // Update video mirror based on camera (front = mirror, back = no mirror)
+                if (currentFacingMode === 'user') {
+                    video.style.transform = 'scaleX(-1)';
+                    canvas.style.transform = 'scaleX(-1)';
+                } else {
+                    video.style.transform = 'scaleX(1)';
+                    canvas.style.transform = 'scaleX(1)';
+                }
+
+                document.getElementById('cameraStatus').textContent =
+                    currentFacingMode === 'user' ? 'Front camera ready' : 'Back camera ready';
+
+                // Start face detection preview
+                startFaceDetection();
+
+            } catch (err) {
+                console.error('Camera error:', err);
+                document.getElementById('cameraStatus').textContent = 'Camera access denied';
+            }
+        }
+
+        // Switch between front and back camera
+        async function switchCamera() {
+            currentFacingMode = currentFacingMode === 'user' ? 'environment' : 'user';
+            document.getElementById('cameraStatus').textContent = 'Switching camera...';
+            await startCamera();
+        }
+
+        // Face detection preview loop with auto-capture
+        let consecutiveDetections = 0;
+        let isCapturing = false;
+        const DETECTIONS_NEEDED = 5;  // Need 5 consecutive detections (~1 second) before auto-capture
+
+        function startFaceDetection() {
+            setInterval(async () => {
+                if (!video || video.paused || !isModelLoaded) return;
+                if (isCapturing) return;  // Don't run during capture
+                if (capturedDescriptor) return;  // Already captured
+
+                const detection = await faceapi
+                    .detectSingleFace(video, new faceapi.TinyFaceDetectorOptions())
+                    .withFaceLandmarks();
+
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+                if (detection) {
+                    const box = detection.detection.box;
+                    ctx.strokeStyle = '#10b981';
+                    ctx.lineWidth = 3;
+
+                    // Make frame 20% bigger and vertical (portrait) orientation
+                    const baseSize = Math.max(box.width, box.height);
+                    const frameWidth = baseSize * 1.2;
+                    const frameHeight = frameWidth * 1.4;
+
+                    const faceCenterX = box.x + box.width / 2;
+                    const faceCenterY = box.y + box.height / 2;
+                    const frameX = faceCenterX - frameWidth / 2;
+                    const frameY = faceCenterY - frameHeight / 2;
+
+                    ctx.strokeRect(
+                        canvas.width - frameX - frameWidth,
+                        frameY,
+                        frameWidth,
+                        frameHeight
+                    );
+
+                    // Count consecutive detections for auto-capture
+                    if (selectedStaffId) {
+                        consecutiveDetections++;
+                        const remaining = DETECTIONS_NEEDED - consecutiveDetections;
+                        if (remaining > 0) {
+                            document.getElementById('cameraStatus').textContent = `Hold still... ${remaining}`;
+                        } else {
+                            document.getElementById('cameraStatus').textContent = 'Capturing...';
+                        }
+
+                        // Auto-capture after sustained detection
+                        if (consecutiveDetections >= DETECTIONS_NEEDED) {
+                            consecutiveDetections = 0;
+                            captureFace();
+                        }
+                    } else {
+                        document.getElementById('cameraStatus').textContent = 'Face detected';
+                    }
+                } else {
+                    consecutiveDetections = 0;
+                    document.getElementById('cameraStatus').textContent = 'No face detected';
+                }
+            }, 200);
+        }
+
+        // Capture face descriptor (called automatically when face detected)
+        async function captureFace() {
+            if (!selectedStaffId) {
+                return;
+            }
+
+            if (!isModelLoaded) {
+                return;
+            }
+
+            if (isCapturing) return;  // Prevent double capture
+            isCapturing = true;
+
+            // Show hold still warning prominently
+            document.getElementById('holdStillWarning').style.display = 'block';
+            showLoading('HOLD STILL - Capturing face...');
+
+            // Retry up to 3 times
+            let detection = null;
+            let attempts = 0;
+            const maxAttempts = 3;
+
+            while (!detection && attempts < maxAttempts) {
+                attempts++;
+                console.log(`Capture attempt ${attempts}/${maxAttempts}`);
+
+                if (attempts > 1) {
+                    showLoading(`Retry ${attempts}/${maxAttempts}... Hold still`);
+                    await new Promise(r => setTimeout(r, 500)); // Brief pause between retries
+                }
+
+                try {
+                    // Use slightly larger input size for better detection on tablets
+                    const options = new faceapi.TinyFaceDetectorOptions({
+                        inputSize: 416,  // Larger = better detection but slower (default 416)
+                        scoreThreshold: 0.4  // Lower = more sensitive detection (default 0.5)
+                    });
+
+                    detection = await faceapi
+                        .detectSingleFace(video, options)
+                        .withFaceLandmarks()
+                        .withFaceDescriptor();
+
+                } catch (err) {
+                    console.error(`Attempt ${attempts} error:`, err);
+                }
+            }
+
+            if (!detection) {
+                document.getElementById('holdStillWarning').style.display = 'none';
+                hideLoading();
+                showMessage('Could not capture face. Try again with better lighting.', 'error');
+                isCapturing = false;  // Allow retry
+                consecutiveDetections = 0;
+                return;
+            }
+
+            try {
+                capturedDescriptor = Array.from(detection.descriptor);
+                console.log('Face descriptor captured:', capturedDescriptor.length, 'dimensions');
+
+                // Create preview image
+                const tempCanvas = document.createElement('canvas');
+                tempCanvas.width = video.videoWidth;
+                tempCanvas.height = video.videoHeight;
+                const tempCtx = tempCanvas.getContext('2d');
+                // Only mirror for front camera
+                if (currentFacingMode === 'user') {
+                    tempCtx.translate(tempCanvas.width, 0);
+                    tempCtx.scale(-1, 1);
+                }
+                tempCtx.drawImage(video, 0, 0);
+
+                document.getElementById('previewImage').src = tempCanvas.toDataURL('image/jpeg');
+                document.getElementById('capturePreview').classList.add('show');
+
+                // Hide the camera container - only show captured face
+                document.getElementById('cameraContainer').style.display = 'none';
+                // Show Retake and Enroll buttons
+                document.getElementById('retakeBtn').style.display = 'block';
+                document.getElementById('enrollBtn').style.display = 'block';
+                document.getElementById('enrollBtn').disabled = false;
+
+                document.getElementById('holdStillWarning').style.display = 'none';
+                hideLoading();
+                showMessage('Face captured! Tap "Enroll Face" to save.', 'success');
+
+            } catch (err) {
+                document.getElementById('holdStillWarning').style.display = 'none';
+                hideLoading();
+                console.error('Capture error:', err);
+                showMessage('Failed to process face image', 'error');
+                isCapturing = false;
+                consecutiveDetections = 0;
+            }
+        }
+
+        // Enroll face to server
+        async function enrollFace() {
+            if (!selectedStaffId || !capturedDescriptor) {
+                showMessage('Please capture a face first', 'error');
+                return;
+            }
+
+            showLoading('Enrolling face...');
+
+            try {
+                const response = await fetch('/api/kiosk/enroll', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({
+                        staff_id: selectedStaffId,
+                        descriptor: capturedDescriptor
+                    })
+                });
+
+                const data = await response.json();
+                hideLoading();
+
+                if (data.success) {
+                    showMessage(data.message, 'success');
+
+                    // Reset UI - show camera again, hide preview
+                    resetCaptureUI();
+
+                    // Reload list
+                    await loadEnrollmentStatus();
+                } else {
+                    showMessage(data.error || 'Enrollment failed', 'error');
+                }
+
+            } catch (err) {
+                hideLoading();
+                console.error('Enroll error:', err);
+                showMessage('Connection error', 'error');
+            }
+        }
+
+        // Unenroll staff
+        async function unenrollStaff(staffId, staffName) {
+            if (!confirm(`Remove face enrollment for ${staffName}?`)) return;
+
+            showLoading('Removing enrollment...');
+
+            try {
+                const response = await fetch(`/api/kiosk/unenroll/${staffId}`, {
+                    method: 'DELETE',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                const data = await response.json();
+                hideLoading();
+
+                if (data.success) {
+                    showMessage(data.message, 'success');
+                    await loadEnrollmentStatus();
+                } else {
+                    showMessage(data.error || 'Failed to remove', 'error');
+                }
+
+            } catch (err) {
+                hideLoading();
+                showMessage('Connection error', 'error');
+            }
+        }
+
+        // UI Helpers
+        function showLoading(text) {
+            document.getElementById('loadingText').textContent = text;
+            document.getElementById('loadingOverlay').classList.add('show');
+        }
+
+        function hideLoading() {
+            document.getElementById('loadingOverlay').classList.remove('show');
+        }
+
+        function showMessage(text, type) {
+            const msg = document.getElementById('message');
+            msg.textContent = text;
+            msg.className = `message show ${type}`;
+            setTimeout(() => msg.classList.remove('show'), 5000);
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,936 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>WAGEPRO Kiosk - Face Clock-In</title>
+    <script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            min-height: 100vh;
+            color: #fff;
+            overflow: hidden;
+        }
+
+        .kiosk-container {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            padding: 10px 0;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            background: linear-gradient(135deg, #4ecca3, #45b7d1);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .header .site-name {
+            color: #888;
+            font-size: 1.2em;
+            margin-top: 5px;
+        }
+
+        .clock-display {
+            text-align: center;
+            font-size: 3em;
+            font-weight: bold;
+            color: #4ecca3;
+            margin: 10px 0;
+        }
+
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+        }
+
+        /* Camera Section */
+        .camera-section {
+            position: relative;
+            width: 100%;
+            max-width: 500px;
+        }
+
+        .camera-container {
+            position: relative;
+            width: 100%;
+            aspect-ratio: 4/3;
+            background: #000;
+            border-radius: 20px;
+            overflow: hidden;
+            border: 3px solid #333;
+        }
+
+        .camera-container.detecting {
+            border-color: #f39c12;
+        }
+
+        .camera-container.matched {
+            border-color: #4ecca3;
+        }
+
+        .camera-container.no-match {
+            border-color: #e94560;
+        }
+
+        #video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transform: scaleX(-1); /* Mirror for selfie view */
+        }
+
+        #overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            transform: scaleX(-1); /* Mirror to match video */
+        }
+
+        .face-guide {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 200px;
+            height: 250px;
+            border: 3px dashed rgba(255,255,255,0.3);
+            border-radius: 50%;
+            pointer-events: none;
+        }
+
+        .camera-status {
+            position: absolute;
+            bottom: 15px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0,0,0,0.7);
+            padding: 8px 20px;
+            border-radius: 20px;
+            font-size: 0.9em;
+        }
+
+        /* Recognition Result */
+        .recognition-result {
+            text-align: center;
+            min-height: 80px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .worker-name {
+            font-size: 2em;
+            font-weight: bold;
+            color: #4ecca3;
+        }
+
+        .worker-site {
+            color: #888;
+            font-size: 1.1em;
+        }
+
+        .confidence {
+            color: #666;
+            font-size: 0.9em;
+            margin-top: 5px;
+        }
+
+        /* Action Buttons */
+        .action-buttons {
+            display: flex;
+            gap: 20px;
+            width: 100%;
+            max-width: 500px;
+        }
+
+        .action-btn {
+            flex: 1;
+            padding: 25px;
+            font-size: 1.5em;
+            font-weight: bold;
+            border: none;
+            border-radius: 15px;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .action-btn:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+        }
+
+        .action-btn.signin {
+            background: linear-gradient(135deg, #4ecca3 0%, #38b48b 100%);
+            color: white;
+        }
+
+        .action-btn.signout {
+            background: linear-gradient(135deg, #e94560 0%, #c73659 100%);
+            color: white;
+        }
+
+        .action-btn:not(:disabled):active {
+            transform: scale(0.98);
+        }
+
+        .action-btn .icon {
+            font-size: 2em;
+        }
+
+        /* Status Messages */
+        .status-message {
+            text-align: center;
+            padding: 15px 30px;
+            border-radius: 10px;
+            font-size: 1.1em;
+            display: none;
+        }
+
+        .status-message.success {
+            background: rgba(78, 204, 163, 0.2);
+            color: #4ecca3;
+            display: block;
+        }
+
+        .status-message.error {
+            background: rgba(233, 69, 96, 0.2);
+            color: #e94560;
+            display: block;
+        }
+
+        .status-message.info {
+            background: rgba(243, 156, 18, 0.2);
+            color: #f39c12;
+            display: block;
+        }
+
+        /* Loading Overlay */
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.8);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .loading-overlay.show {
+            display: flex;
+        }
+
+        .spinner {
+            width: 60px;
+            height: 60px;
+            border: 4px solid rgba(255,255,255,0.1);
+            border-top-color: #4ecca3;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .loading-text {
+            color: #fff;
+            font-size: 1.2em;
+        }
+
+        /* Success Animation */
+        .success-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.9);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1001;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .success-overlay.show {
+            display: flex;
+        }
+
+        .success-icon {
+            font-size: 5em;
+            animation: popIn 0.5s ease;
+        }
+
+        .success-message {
+            font-size: 2em;
+            font-weight: bold;
+            text-align: center;
+        }
+
+        .success-name {
+            font-size: 2.5em;
+            color: #4ecca3;
+        }
+
+        .success-time {
+            color: #888;
+            font-size: 1.2em;
+        }
+
+        @keyframes popIn {
+            0% { transform: scale(0); opacity: 0; }
+            70% { transform: scale(1.2); }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        /* Idle Screen */
+        .idle-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            gap: 30px;
+            z-index: 500;
+            cursor: pointer;
+        }
+
+        .idle-screen.hidden {
+            display: none;
+        }
+
+        .idle-title {
+            font-size: 3em;
+            background: linear-gradient(135deg, #4ecca3, #45b7d1);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .idle-instruction {
+            font-size: 1.5em;
+            color: #888;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .idle-clock {
+            font-size: 5em;
+            font-weight: bold;
+            color: #4ecca3;
+        }
+
+        /* Manual Entry Fallback */
+        .manual-entry {
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        .manual-entry a {
+            color: #666;
+            text-decoration: none;
+            font-size: 0.9em;
+        }
+
+        .manual-entry a:hover {
+            color: #4ecca3;
+        }
+    </style>
+</head>
+<body>
+    <!-- Idle Screen (tap to activate) -->
+    <div class="idle-screen" id="idleScreen" onclick="activateKiosk()">
+        <h1 class="idle-title">WAGEPRO</h1>
+        <div class="idle-clock" id="idleClock">--:--</div>
+        <p class="idle-instruction">Tap anywhere to clock in/out</p>
+    </div>
+
+    <!-- Main Kiosk Interface -->
+    <div class="kiosk-container" id="kioskContainer" style="display: none;">
+        <div class="header">
+            <h1>WAGEPRO</h1>
+            <div class="site-name" id="siteName">Kiosk Mode</div>
+        </div>
+
+        <div class="clock-display" id="clockDisplay">--:--:--</div>
+
+        <div class="main-content">
+            <!-- Camera View -->
+            <div class="camera-section">
+                <div class="camera-container" id="cameraContainer">
+                    <video id="video" autoplay muted playsinline></video>
+                    <canvas id="overlay"></canvas>
+                    <div class="face-guide"></div>
+                    <div class="camera-status" id="cameraStatus">Initializing camera...</div>
+                </div>
+            </div>
+
+            <!-- Recognition Result -->
+            <div class="recognition-result" id="recognitionResult">
+                <div class="worker-name" id="workerName">Position your face in the frame</div>
+                <div class="worker-site" id="workerSite"></div>
+                <div class="confidence" id="confidence"></div>
+            </div>
+
+            <!-- Status Message -->
+            <div class="status-message" id="statusMessage"></div>
+
+            <!-- Action Buttons -->
+            <div class="action-buttons">
+                <button class="action-btn signin" id="signinBtn" disabled onclick="clockIn()">
+                    <span class="icon">&#x2192;</span>
+                    <span>SIGN IN</span>
+                </button>
+                <button class="action-btn signout" id="signoutBtn" disabled onclick="clockOut()">
+                    <span class="icon">&#x2190;</span>
+                    <span>SIGN OUT</span>
+                </button>
+            </div>
+
+            <!-- Manual Entry Fallback -->
+            <div class="manual-entry">
+                <a href="/clockin">Can't recognize? Use manual entry</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="spinner"></div>
+        <div class="loading-text" id="loadingText">Loading...</div>
+    </div>
+
+    <!-- Success Overlay -->
+    <div class="success-overlay" id="successOverlay">
+        <div class="success-icon" id="successIcon">&#x2714;</div>
+        <div class="success-name" id="successName">John Doe</div>
+        <div class="success-message" id="successMessage">Signed In!</div>
+        <div class="success-time" id="successTime">07:25 AM</div>
+    </div>
+
+    <script>
+        // Configuration
+        const FACE_MATCH_THRESHOLD = 0.5; // Lower = stricter matching (0.4-0.6 typical)
+        const IDLE_TIMEOUT = 30000; // Return to idle after 30 seconds of no activity
+        const SUCCESS_DISPLAY_TIME = 3000; // Show success screen for 3 seconds
+
+        // State
+        let video = null;
+        let canvas = null;
+        let ctx = null;
+        let isModelLoaded = false;
+        let isDetecting = false;
+        let matchedStaff = null;
+        let staffDescriptors = []; // Array of {staff_id, name, site, descriptor}
+        let idleTimer = null;
+        let detectionInterval = null;
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', async () => {
+            updateClocks();
+            setInterval(updateClocks, 1000);
+            await loadFaceApiModels();
+            await loadStaffDescriptors();
+        });
+
+        // Update both clocks
+        function updateClocks() {
+            const now = new Date();
+            const timeStr = now.toLocaleTimeString('en-US', {
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit',
+                hour12: false
+            });
+            const shortTime = now.toLocaleTimeString('en-US', {
+                hour: '2-digit',
+                minute: '2-digit',
+                hour12: false
+            });
+
+            document.getElementById('clockDisplay').textContent = timeStr;
+            document.getElementById('idleClock').textContent = shortTime;
+        }
+
+        // Load face-api.js models
+        async function loadFaceApiModels() {
+            showLoading('Loading face recognition...');
+            try {
+                // Load models from CDN
+                const MODEL_URL = 'https://cdn.jsdelivr.net/npm/@vladmandic/face-api/model';
+
+                await Promise.all([
+                    faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL),
+                    faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL),
+                    faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL)
+                ]);
+
+                isModelLoaded = true;
+                console.log('Face-api models loaded');
+                hideLoading();
+            } catch (err) {
+                console.error('Failed to load face-api models:', err);
+                hideLoading();
+                showStatus('Failed to load face recognition. Please refresh.', 'error');
+            }
+        }
+
+        // Load enrolled staff face descriptors from server
+        async function loadStaffDescriptors() {
+            try {
+                const response = await fetch('/api/kiosk/staff-faces');
+                const data = await response.json();
+
+                if (data.success) {
+                    staffDescriptors = data.staff.map(s => ({
+                        staff_id: s.id,
+                        name: s.name,
+                        site: s.site,
+                        descriptor: new Float32Array(s.descriptor)
+                    }));
+                    console.log(`Loaded ${staffDescriptors.length} staff face descriptors`);
+                }
+            } catch (err) {
+                console.error('Failed to load staff descriptors:', err);
+            }
+        }
+
+        // Activate kiosk from idle screen
+        async function activateKiosk() {
+            document.getElementById('idleScreen').classList.add('hidden');
+            document.getElementById('kioskContainer').style.display = 'flex';
+
+            resetIdleTimer();
+            await startCamera();
+        }
+
+        // Return to idle screen
+        function returnToIdle() {
+            stopCamera();
+            document.getElementById('kioskContainer').style.display = 'none';
+            document.getElementById('idleScreen').classList.remove('hidden');
+            matchedStaff = null;
+            updateButtons();
+            document.getElementById('workerName').textContent = 'Position your face in the frame';
+            document.getElementById('workerSite').textContent = '';
+            document.getElementById('confidence').textContent = '';
+        }
+
+        // Reset idle timer
+        function resetIdleTimer() {
+            if (idleTimer) clearTimeout(idleTimer);
+            idleTimer = setTimeout(returnToIdle, IDLE_TIMEOUT);
+        }
+
+        // Start camera with retry logic
+        let cameraRetries = 0;
+        const MAX_CAMERA_RETRIES = 3;
+
+        async function startCamera() {
+            const statusEl = document.getElementById('cameraStatus');
+            try {
+                video = document.getElementById('video');
+                canvas = document.getElementById('overlay');
+
+                statusEl.textContent = 'Requesting camera...';
+                console.log('Requesting camera permission...');
+
+                // Check if getUserMedia is available
+                if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                    throw new Error('Camera not supported - requires HTTPS');
+                }
+
+                // Request camera with generous timeout
+                const cameraPromise = navigator.mediaDevices.getUserMedia({
+                    video: {
+                        facingMode: 'user',
+                        width: { ideal: 640 },
+                        height: { ideal: 480 }
+                    }
+                });
+
+                // 15 second timeout for camera request
+                const timeoutPromise = new Promise((_, reject) =>
+                    setTimeout(() => reject(new Error('Camera timeout - check permissions')), 15000)
+                );
+
+                const stream = await Promise.race([cameraPromise, timeoutPromise]);
+                console.log('Camera stream obtained');
+
+                statusEl.textContent = 'Starting video...';
+                video.srcObject = stream;
+
+                // Wait for video to be ready with longer timeout
+                await new Promise((resolve, reject) => {
+                    const loadTimeout = setTimeout(() => {
+                        reject(new Error('Video load timeout - try refreshing'));
+                    }, 15000);  // 15 second timeout
+
+                    video.onloadedmetadata = () => {
+                        clearTimeout(loadTimeout);
+                        console.log('Video metadata loaded');
+                        resolve();
+                    };
+
+                    video.onerror = (e) => {
+                        clearTimeout(loadTimeout);
+                        reject(new Error('Video error: ' + (e.message || 'unknown')));
+                    };
+
+                    // Also check if already ready
+                    if (video.readyState >= 1) {
+                        clearTimeout(loadTimeout);
+                        console.log('Video already has metadata');
+                        resolve();
+                    }
+                });
+
+                await video.play();
+                console.log('Video playing, dimensions:', video.videoWidth, 'x', video.videoHeight);
+
+                // Set canvas size to match video
+                canvas.width = video.videoWidth || 640;
+                canvas.height = video.videoHeight || 480;
+                ctx = canvas.getContext('2d');
+
+                statusEl.textContent = 'Looking for face...';
+                console.log('Camera started successfully');
+                cameraRetries = 0;  // Reset retry counter on success
+
+                // Start face detection loop
+                startFaceDetection();
+
+            } catch (err) {
+                console.error('Camera error:', err);
+                statusEl.textContent = err.message || 'Camera access denied';
+
+                // Auto-retry a few times
+                if (cameraRetries < MAX_CAMERA_RETRIES) {
+                    cameraRetries++;
+                    statusEl.textContent = `Retrying camera (${cameraRetries}/${MAX_CAMERA_RETRIES})...`;
+                    console.log(`Retrying camera attempt ${cameraRetries}...`);
+
+                    // Stop any existing streams
+                    if (video && video.srcObject) {
+                        video.srcObject.getTracks().forEach(track => track.stop());
+                        video.srcObject = null;
+                    }
+
+                    // Wait a bit then retry
+                    setTimeout(startCamera, 2000);
+                } else {
+                    showStatus('Camera error: ' + (err.message || 'Please allow camera access and refresh'), 'error');
+                }
+            }
+        }
+
+        // Stop camera
+        function stopCamera() {
+            if (detectionInterval) {
+                clearInterval(detectionInterval);
+                detectionInterval = null;
+            }
+
+            if (video && video.srcObject) {
+                video.srcObject.getTracks().forEach(track => track.stop());
+                video.srcObject = null;
+            }
+        }
+
+        // Start face detection loop
+        function startFaceDetection() {
+            if (!isModelLoaded) {
+                console.log('Models not loaded yet');
+                return;
+            }
+
+            detectionInterval = setInterval(async () => {
+                if (isDetecting) return;
+                isDetecting = true;
+
+                try {
+                    await detectAndMatchFace();
+                } catch (err) {
+                    console.error('Detection error:', err);
+                }
+
+                isDetecting = false;
+            }, 500); // Check every 500ms
+        }
+
+        // Detect face and match against enrolled staff
+        async function detectAndMatchFace() {
+            if (!video || video.paused || video.ended) return;
+
+            const container = document.getElementById('cameraContainer');
+
+            // Detect face with landmarks and descriptor
+            const detection = await faceapi
+                .detectSingleFace(video, new faceapi.TinyFaceDetectorOptions())
+                .withFaceLandmarks()
+                .withFaceDescriptor();
+
+            // Clear previous drawings
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            if (!detection) {
+                container.className = 'camera-container';
+                document.getElementById('cameraStatus').textContent = 'Looking for face...';
+                matchedStaff = null;
+                updateRecognitionResult(null);
+                return;
+            }
+
+            // Draw face detection box (mirrored)
+            const box = detection.detection.box;
+            ctx.strokeStyle = '#4ecca3';
+            ctx.lineWidth = 3;
+            ctx.strokeRect(
+                canvas.width - box.x - box.width, // Mirror X
+                box.y,
+                box.width,
+                box.height
+            );
+
+            container.className = 'camera-container detecting';
+            document.getElementById('cameraStatus').textContent = 'Recognizing...';
+
+            // Match against enrolled staff
+            if (staffDescriptors.length === 0) {
+                document.getElementById('cameraStatus').textContent = 'No staff enrolled';
+                return;
+            }
+
+            let bestMatch = null;
+            let bestDistance = Infinity;
+
+            for (const staff of staffDescriptors) {
+                const distance = faceapi.euclideanDistance(detection.descriptor, staff.descriptor);
+                if (distance < bestDistance) {
+                    bestDistance = distance;
+                    bestMatch = staff;
+                }
+            }
+
+            // Check if match is good enough
+            if (bestDistance < FACE_MATCH_THRESHOLD) {
+                container.className = 'camera-container matched';
+                document.getElementById('cameraStatus').textContent = 'Face recognized!';
+                matchedStaff = {
+                    ...bestMatch,
+                    confidence: Math.round((1 - bestDistance) * 100)
+                };
+                updateRecognitionResult(matchedStaff);
+            } else {
+                container.className = 'camera-container no-match';
+                document.getElementById('cameraStatus').textContent = 'Face not recognized';
+                matchedStaff = null;
+                updateRecognitionResult(null, bestDistance);
+            }
+
+            resetIdleTimer();
+        }
+
+        // Update recognition result display
+        function updateRecognitionResult(staff, distance = null) {
+            const nameEl = document.getElementById('workerName');
+            const siteEl = document.getElementById('workerSite');
+            const confEl = document.getElementById('confidence');
+
+            if (staff) {
+                nameEl.textContent = staff.name;
+                nameEl.style.color = '#4ecca3';
+                siteEl.textContent = staff.site || '';
+                confEl.textContent = `Confidence: ${staff.confidence}%`;
+            } else {
+                nameEl.textContent = distance ? 'Unknown person' : 'Position your face in the frame';
+                nameEl.style.color = distance ? '#e94560' : '#888';
+                siteEl.textContent = '';
+                confEl.textContent = '';
+            }
+
+            updateButtons();
+        }
+
+        // Update button states
+        function updateButtons() {
+            const signinBtn = document.getElementById('signinBtn');
+            const signoutBtn = document.getElementById('signoutBtn');
+
+            if (matchedStaff) {
+                signinBtn.disabled = false;
+                signoutBtn.disabled = false;
+            } else {
+                signinBtn.disabled = true;
+                signoutBtn.disabled = true;
+            }
+        }
+
+        // Clock In
+        async function clockIn() {
+            if (!matchedStaff) return;
+
+            resetIdleTimer();
+            showLoading('Signing in...');
+
+            try {
+                const response = await fetch('/api/kiosk/clockin', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        staff_id: matchedStaff.staff_id,
+                        confidence: matchedStaff.confidence
+                    })
+                });
+
+                const data = await response.json();
+                hideLoading();
+
+                if (data.success) {
+                    showSuccess(matchedStaff.name, 'Signed In!', true);
+                } else {
+                    showStatus(data.error || 'Sign in failed', 'error');
+                }
+            } catch (err) {
+                hideLoading();
+                showStatus('Connection error', 'error');
+            }
+        }
+
+        // Clock Out
+        async function clockOut() {
+            if (!matchedStaff) return;
+
+            resetIdleTimer();
+            showLoading('Signing out...');
+
+            try {
+                const response = await fetch('/api/kiosk/clockout', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        staff_id: matchedStaff.staff_id,
+                        confidence: matchedStaff.confidence
+                    })
+                });
+
+                const data = await response.json();
+                hideLoading();
+
+                if (data.success) {
+                    const hoursMsg = data.hours_worked ? ` (${data.hours_worked} hrs)` : '';
+                    showSuccess(matchedStaff.name, `Signed Out!${hoursMsg}`, false);
+                } else {
+                    showStatus(data.error || 'Sign out failed', 'error');
+                }
+            } catch (err) {
+                hideLoading();
+                showStatus('Connection error', 'error');
+            }
+        }
+
+        // Show success overlay
+        function showSuccess(name, message, isSignIn) {
+            const overlay = document.getElementById('successOverlay');
+            const icon = document.getElementById('successIcon');
+            const nameEl = document.getElementById('successName');
+            const msgEl = document.getElementById('successMessage');
+            const timeEl = document.getElementById('successTime');
+
+            icon.textContent = isSignIn ? '&#x2714;' : '&#x2190;';
+            icon.style.color = isSignIn ? '#4ecca3' : '#e94560';
+            nameEl.textContent = name;
+            msgEl.textContent = message;
+            msgEl.style.color = isSignIn ? '#4ecca3' : '#e94560';
+            timeEl.textContent = new Date().toLocaleTimeString('en-US', {
+                hour: '2-digit',
+                minute: '2-digit',
+                hour12: true
+            });
+
+            overlay.classList.add('show');
+
+            // Auto-hide and return to idle
+            setTimeout(() => {
+                overlay.classList.remove('show');
+                returnToIdle();
+            }, SUCCESS_DISPLAY_TIME);
+        }
+
+        // Show loading overlay
+        function showLoading(text) {
+            document.getElementById('loadingText').textContent = text;
+            document.getElementById('loadingOverlay').classList.add('show');
+        }
+
+        // Hide loading overlay
+        function hideLoading() {
+            document.getElementById('loadingOverlay').classList.remove('show');
+        }
+
+        // Show status message
+        function showStatus(message, type) {
+            const el = document.getElementById('statusMessage');
+            el.textContent = message;
+            el.className = 'status-message ' + type;
+
+            setTimeout(() => {
+                el.className = 'status-message';
+            }, 5000);
+        }
+
+        // Handle page visibility changes
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden) {
+                stopCamera();
+            }
+        });
+
+        // Prevent screen sleep on touch devices
+        document.addEventListener('touchstart', resetIdleTimer);
+        document.addEventListener('click', resetIdleTimer);
+    </script>
+</body>
+</html>

@@ -1,0 +1,1237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>WORKPRO Mobile</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            min-height: 100vh;
+            color: white;
+        }
+
+        .container {
+            max-width: 500px;
+            margin: 0 auto;
+            padding: 1rem;
+        }
+
+        /* Header */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 0;
+            margin-bottom: 1rem;
+        }
+
+        .header h1 {
+            font-size: 1.5rem;
+            color: #667eea;
+        }
+
+        .logout-btn {
+            background: #ef4444;
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+
+        /* Login Screen */
+        #loginScreen {
+            background: rgba(255,255,255,0.05);
+            border-radius: 16px;
+            padding: 2rem;
+            margin-top: 3rem;
+        }
+
+        #loginScreen h2 {
+            text-align: center;
+            margin-bottom: 0.5rem;
+            color: #667eea;
+        }
+
+        #loginScreen .subtitle {
+            text-align: center;
+            color: #94a3b8;
+            margin-bottom: 2rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group label {
+            display: block;
+            color: #94a3b8;
+            margin-bottom: 0.5rem;
+            font-size: 0.9rem;
+        }
+
+        .form-group input, .form-group select, .form-group textarea {
+            width: 100%;
+            padding: 1rem;
+            border: 2px solid rgba(255,255,255,0.1);
+            border-radius: 10px;
+            background: rgba(255,255,255,0.05);
+            color: white;
+            font-size: 1rem;
+        }
+
+        /* Fix dropdown option colors for visibility */
+        .form-group select option {
+            background: #1a1a2e;
+            color: white;
+            padding: 0.5rem;
+        }
+
+        .form-group input:focus, .form-group select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        /* Tabs */
+        .tabs {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1.5rem;
+            background: rgba(0,0,0,0.2);
+            padding: 0.5rem;
+            border-radius: 12px;
+        }
+
+        .tab-btn {
+            flex: 1;
+            padding: 0.75rem;
+            border: none;
+            border-radius: 8px;
+            background: transparent;
+            color: #94a3b8;
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 0.85rem;
+        }
+
+        .tab-btn.active {
+            background: #667eea;
+            color: white;
+        }
+
+        /* Cards */
+        .card {
+            background: rgba(255,255,255,0.05);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .card h3 {
+            color: #667eea;
+            margin-bottom: 1rem;
+            font-size: 1.1rem;
+        }
+
+        /* Buttons */
+        .btn {
+            width: 100%;
+            padding: 1rem;
+            border: none;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.1s, opacity 0.2s;
+        }
+
+        .btn:active {
+            transform: scale(0.98);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+            color: white;
+        }
+
+        .btn-small {
+            padding: 0.5rem 1rem;
+            font-size: 0.85rem;
+            width: auto;
+        }
+
+        /* Priority badges */
+        .priority-urgent { background: #ef4444; color: white; }
+        .priority-next_week { background: #f59e0b; color: white; }
+        .priority-next_month { background: #3b82f6; color: white; }
+        .priority-normal { background: #6b7280; color: white; }
+
+        .badge {
+            display: inline-block;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        /* List items */
+        .list-item {
+            background: rgba(0,0,0,0.2);
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .list-item .title {
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+        }
+
+        .list-item .meta {
+            color: #94a3b8;
+            font-size: 0.85rem;
+        }
+
+        /* Stock indicator */
+        .stock-ok { color: #10b981; }
+        .stock-low { color: #ef4444; }
+
+        /* Quick action buttons */
+        .quick-actions {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+            margin-bottom: 1rem;
+        }
+
+        .quick-btn {
+            background: rgba(255,255,255,0.1);
+            border: none;
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            cursor: pointer;
+        }
+
+        .quick-btn:hover, .quick-btn.active {
+            background: #667eea;
+        }
+
+        /* Messages */
+        .message {
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            text-align: center;
+        }
+
+        .message.success { background: rgba(16, 185, 129, 0.2); color: #10b981; }
+        .message.error { background: rgba(239, 68, 68, 0.2); color: #ef4444; }
+
+        /* Tab content */
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* Hide dashboard initially */
+        #dashboard {
+            display: none;
+        }
+
+        /* Loading */
+        .loading {
+            text-align: center;
+            padding: 2rem;
+            color: #94a3b8;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Login Screen -->
+        <div id="loginScreen">
+            <h2>WORKPRO Mobile</h2>
+            <p class="subtitle">Manager Access</p>
+
+            <form id="loginForm">
+                <div class="form-group">
+                    <label>Username</label>
+                    <input type="text" id="username" placeholder="Enter username" value="BRUCE" required>
+                </div>
+                <div class="form-group">
+                    <label>Password</label>
+                    <input type="password" id="password" placeholder="Enter password" value="bruce" required>
+                </div>
+                <div id="loginError" class="message error" style="display: none;"></div>
+                <button type="submit" class="btn btn-primary">Login</button>
+            </form>
+        </div>
+
+        <!-- Dashboard -->
+        <div id="dashboard">
+            <div class="header">
+                <h1>WORKPRO</h1>
+                <button class="logout-btn" onclick="logout()">Logout</button>
+            </div>
+
+            <!-- Tabs -->
+            <div class="tabs">
+                <button class="tab-btn active" onclick="showTab('tasks')">Tasks</button>
+                <button class="tab-btn" onclick="showTab('shopping')">Shop</button>
+                <button class="tab-btn" onclick="showTab('received')">Receive</button>
+                <button class="tab-btn" onclick="showTab('used')">Use</button>
+                <button class="tab-btn" onclick="showTab('inventory')">Stock</button>
+            </div>
+
+            <!-- Tasks Tab -->
+            <div id="tasksTab" class="tab-content active">
+                <div class="card">
+                    <h3>Quick Add Project/Task</h3>
+
+                    <div class="form-group">
+                        <label>Project</label>
+                        <select id="projectSelect" onchange="onProjectSelect()">
+                            <option value="">-- Select Project --</option>
+                            <option value="new">+ Create New Project</option>
+                        </select>
+                    </div>
+
+                    <div id="newProjectForm" style="display: none;">
+                        <div class="form-group">
+                            <label>New Project Name</label>
+                            <input type="text" id="newProjectName" placeholder="e.g. Fix Workshop Roof">
+                        </div>
+                        <button type="button" class="btn btn-success" onclick="createProject()" style="margin-bottom: 1rem;">Create Project</button>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Task</label>
+                        <select id="taskSelect">
+                            <option value="">-- Select Task --</option>
+                            <option value="new">+ Create New Task</option>
+                        </select>
+                    </div>
+
+                    <div id="newTaskForm" style="display: none;">
+                        <div class="form-group">
+                            <label>New Task Title</label>
+                            <input type="text" id="newTaskTitle" placeholder="e.g. Replace broken tiles">
+                        </div>
+                        <button type="button" class="btn btn-success" onclick="createTask()">Create Task</button>
+                    </div>
+
+                    <div id="taskMessage" class="message" style="display: none;"></div>
+                </div>
+
+                <div class="card">
+                    <h3>Recent Tasks</h3>
+                    <div id="recentTasks" class="loading">Loading tasks...</div>
+                </div>
+            </div>
+
+            <!-- Shopping List Tab -->
+            <div id="shoppingTab" class="tab-content">
+                <div class="card">
+                    <h3>Add to Shopping List</h3>
+
+                    <div class="form-group">
+                        <label>Item Name</label>
+                        <input type="text" id="itemName" placeholder="e.g. 10mm bolts">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Quantity</label>
+                        <input type="number" id="itemQty" value="1" min="1">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Urgency</label>
+                        <div class="quick-actions">
+                            <button class="quick-btn active" onclick="setUrgency('urgent')" id="urgBtn-urgent">URGENT</button>
+                            <button class="quick-btn" onclick="setUrgency('next_week')" id="urgBtn-next_week">Next Week</button>
+                            <button class="quick-btn" onclick="setUrgency('next_month')" id="urgBtn-next_month">Next Month</button>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Project (Optional)</label>
+                        <select id="shoppingProjectSelect">
+                            <option value="">-- No Project --</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Supplier (Optional)</label>
+                        <select id="shoppingSupplierSelect">
+                            <option value="">-- Unknown / Any --</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Notes</label>
+                        <textarea id="itemNotes" rows="2" placeholder="Optional notes..."></textarea>
+                    </div>
+
+                    <button type="button" class="btn btn-primary" onclick="addToShoppingList()">Add to List</button>
+
+                    <div id="shoppingMessage" class="message" style="display: none; margin-top: 1rem;"></div>
+                </div>
+
+                <div class="card">
+                    <h3>Current Shopping List</h3>
+                    <div id="shoppingList" class="loading">Loading...</div>
+                </div>
+            </div>
+
+            <!-- Received Tab (Items Received) -->
+            <div id="receivedTab" class="tab-content">
+                <div class="card">
+                    <h3>Pending Items to Receive</h3>
+                    <div id="pendingItems" class="loading">Loading...</div>
+                </div>
+
+                <div class="card">
+                    <h3>Quick Receive</h3>
+                    <p style="color: #94a3b8; font-size: 0.85rem; margin-bottom: 1rem;">
+                        Tap an item above to receive it, or manually enter below:
+                    </p>
+                    <div class="form-group">
+                        <label>Material</label>
+                        <select id="receiveItemSelect">
+                            <option value="">-- Select from pending --</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Quantity Received</label>
+                        <input type="number" id="receiveQty" value="1" min="0.1" step="0.1">
+                    </div>
+                    <div class="form-group">
+                        <label>Unit Cost (Rands)</label>
+                        <input type="number" id="receiveUnitCost" placeholder="e.g. 1200.00" value="0" min="0" step="0.01">
+                    </div>
+
+                    <!-- Photo Upload -->
+                    <div class="form-group">
+                        <label>Photo (Proof of Receipt)</label>
+                        <div style="display: flex; gap: 0.5rem; align-items: center;">
+                            <input type="file" id="receivePhoto" accept="image/*" capture="environment"
+                                   style="display: none;" onchange="previewReceiptPhoto(this)">
+                            <button type="button" class="btn btn-small" style="background: #3b82f6;"
+                                    onclick="document.getElementById('receivePhoto').click()">
+                                📷 Take Photo
+                            </button>
+                            <span id="photoStatus" style="color: #94a3b8; font-size: 0.85rem;">No photo</span>
+                        </div>
+                        <div id="photoPreview" style="margin-top: 0.5rem; display: none;">
+                            <img id="previewImg" style="max-width: 100%; max-height: 150px; border-radius: 8px;">
+                            <button type="button" class="btn btn-small btn-danger" style="margin-top: 0.5rem;"
+                                    onclick="clearReceiptPhoto()">Remove</button>
+                        </div>
+                    </div>
+
+                    <button class="btn btn-success" onclick="receiveItem()">Mark as Received</button>
+                    <div id="receiveMessage" class="message" style="display: none; margin-top: 1rem;"></div>
+                </div>
+            </div>
+
+            <!-- Used Tab (Items Used) -->
+            <div id="usedTab" class="tab-content">
+                <div class="card">
+                    <h3>Use Materials from Stock</h3>
+                    <div class="form-group">
+                        <label>Search Material</label>
+                        <input type="text" id="useMaterialSearch" placeholder="Type to search..." oninput="searchMaterialsForUse()">
+                    </div>
+                    <div id="useMaterialResults"></div>
+                </div>
+
+                <div class="card" id="useFormCard" style="display: none;">
+                    <h3>Record Usage</h3>
+                    <div id="selectedMaterialInfo" style="background: rgba(0,0,0,0.2); padding: 1rem; border-radius: 8px; margin-bottom: 1rem;"></div>
+                    <div class="form-group">
+                        <label>Quantity to Use</label>
+                        <input type="number" id="useQty" value="1" min="0.1" step="0.1">
+                    </div>
+                    <div class="form-group">
+                        <label>For Project (Optional)</label>
+                        <select id="useProjectSelect">
+                            <option value="">-- No Project --</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>For Task (Optional)</label>
+                        <select id="useTaskSelect">
+                            <option value="">-- No Task --</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Notes</label>
+                        <input type="text" id="useNotes" placeholder="e.g. Used for repair">
+                    </div>
+                    <button class="btn btn-primary" onclick="useMaterial()">Deduct from Stock</button>
+                    <div id="useMessage" class="message" style="display: none; margin-top: 1rem;"></div>
+                </div>
+
+                <div class="card">
+                    <h3>Recent Usage</h3>
+                    <div id="usageLog" class="loading">Loading...</div>
+                </div>
+            </div>
+
+            <!-- Inventory Tab -->
+            <div id="inventoryTab" class="tab-content">
+                <div class="card">
+                    <h3>Search Inventory</h3>
+                    <div class="form-group">
+                        <input type="text" id="inventorySearch" placeholder="Search materials..." oninput="searchInventory()">
+                    </div>
+                    <div id="inventoryResults"></div>
+                </div>
+
+                <div class="card">
+                    <h3>Low Stock Items</h3>
+                    <div id="lowStockItems" class="loading">Loading...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let token = localStorage.getItem('wagepro_token');
+        let projects = [];
+        let tasks = [];
+        let selectedUrgency = 'urgent';
+
+        // Check if logged in - verify token is still valid
+        if (token) {
+            verifyTokenAndLogin();
+        }
+
+        async function verifyTokenAndLogin() {
+            try {
+                // Test if token is valid by making a simple API call
+                const response = await fetch('/api/workpro/projects', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (response.ok) {
+                    showDashboard();
+                } else {
+                    // Token invalid, clear it
+                    localStorage.removeItem('wagepro_token');
+                    token = null;
+                }
+            } catch (err) {
+                // Network error, still try to show dashboard
+                showDashboard();
+            }
+        }
+
+        // Login form
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+
+            try {
+                const response = await fetch('/api/auth/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password })
+                });
+
+                const data = await response.json();
+
+                if (data.token) {
+                    token = data.token;
+                    localStorage.setItem('wagepro_token', token);
+                    showDashboard();
+                } else {
+                    showError('loginError', data.error || 'Login failed');
+                }
+            } catch (err) {
+                showError('loginError', 'Connection error');
+            }
+        });
+
+        function showDashboard() {
+            document.getElementById('loginScreen').style.display = 'none';
+            document.getElementById('dashboard').style.display = 'block';
+            loadProjects();
+            loadShoppingList();
+            loadVendors();
+            loadInventory();
+            loadPendingItems();
+            loadUsageLog();
+        }
+
+        function logout() {
+            localStorage.removeItem('wagepro_token');
+            location.reload();
+        }
+
+        function showTab(tabName) {
+            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById(tabName + 'Tab').classList.add('active');
+            event.target.classList.add('active');
+
+            // Load data for specific tabs
+            if (tabName === 'received') {
+                loadPendingItems();
+            } else if (tabName === 'used') {
+                loadUsageLog();
+                loadProjectsForUse();
+            } else if (tabName === 'inventory') {
+                loadInventory();
+            }
+        }
+
+        // API helper
+        async function apiCall(endpoint, options = {}) {
+            const response = await fetch(endpoint, {
+                ...options,
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`,
+                    ...options.headers
+                }
+            });
+            return response.json();
+        }
+
+        // Currency formatter - South African Rand
+        function formatCurrency(amount) {
+            if (amount === null || amount === undefined) return '';
+            const num = parseFloat(amount);
+            if (isNaN(num)) return '';
+            return 'R ' + num.toLocaleString('en-ZA', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            });
+        }
+
+        // ===== TASKS =====
+        async function loadProjects() {
+            try {
+                const data = await apiCall('/api/workpro/projects');
+                projects = data.projects || [];
+                console.log('Loaded projects:', projects.length);
+
+                const select = document.getElementById('projectSelect');
+                const shoppingSelect = document.getElementById('shoppingProjectSelect');
+                const useProjectSelect = document.getElementById('useProjectSelect');
+
+                // Build project dropdown with all projects first, then + New option
+                let projectOptions = '<option value="">-- Select Project --</option>';
+                let shoppingOptions = '<option value="">-- No Project --</option>';
+                let useOptions = '<option value="">-- No Project --</option>';
+
+                projects.forEach(p => {
+                    projectOptions += `<option value="${p.id}">${p.name}</option>`;
+                    shoppingOptions += `<option value="${p.id}">${p.name}</option>`;
+                    useOptions += `<option value="${p.id}">${p.name}</option>`;
+                });
+
+                // Add create new option at the end
+                projectOptions += '<option value="new">+ Create New Project</option>';
+
+                select.innerHTML = projectOptions;
+                shoppingSelect.innerHTML = shoppingOptions;
+                if (useProjectSelect) useProjectSelect.innerHTML = useOptions;
+
+                loadTasks();
+            } catch (err) {
+                console.error('Error loading projects:', err);
+            }
+        }
+
+        async function loadTasks() {
+            try {
+                const data = await apiCall('/api/workpro/tasks');
+                tasks = data.tasks || [];
+                renderRecentTasks();
+            } catch (err) {
+                console.error('Error loading tasks:', err);
+            }
+        }
+
+        function renderRecentTasks() {
+            const container = document.getElementById('recentTasks');
+            if (tasks.length === 0) {
+                container.innerHTML = '<p style="color: #94a3b8;">No tasks found</p>';
+                return;
+            }
+
+            container.innerHTML = tasks.slice(0, 10).map(t => `
+                <div class="list-item">
+                    <div class="title">${t.title}</div>
+                    <div class="meta">${t.project_name || 'No Project'} - ${t.status}</div>
+                </div>
+            `).join('');
+        }
+
+        function onProjectSelect() {
+            const projectId = document.getElementById('projectSelect').value;
+            const newProjectForm = document.getElementById('newProjectForm');
+            const taskSelect = document.getElementById('taskSelect');
+            const newTaskForm = document.getElementById('newTaskForm');
+
+            if (projectId === 'new') {
+                newProjectForm.style.display = 'block';
+                taskSelect.innerHTML = '<option value="">-- Create Project First --</option>';
+                newTaskForm.style.display = 'none';
+            } else {
+                newProjectForm.style.display = 'none';
+
+                // Filter tasks for this project
+                const projectTasks = projectId ? tasks.filter(t => t.project_id == projectId) : [];
+
+                taskSelect.innerHTML = '<option value="">-- Select Task --</option><option value="new">+ Create New Task</option>';
+                projectTasks.forEach(t => {
+                    taskSelect.innerHTML += `<option value="${t.id}">${t.title}</option>`;
+                });
+            }
+
+            // Handle task select change
+            taskSelect.onchange = function() {
+                newTaskForm.style.display = this.value === 'new' ? 'block' : 'none';
+            };
+        }
+
+        async function createProject() {
+            const name = document.getElementById('newProjectName').value.trim();
+            if (!name) {
+                showMessage('taskMessage', 'Enter project name', 'error');
+                return;
+            }
+
+            try {
+                const data = await apiCall('/api/workpro/projects', {
+                    method: 'POST',
+                    body: JSON.stringify({ name })
+                });
+
+                if (data.success) {
+                    showMessage('taskMessage', `Project "${name}" created!`, 'success');
+                    document.getElementById('newProjectName').value = '';
+                    document.getElementById('newProjectForm').style.display = 'none';
+                    await loadProjects();
+                    document.getElementById('projectSelect').value = data.project.id;
+                    onProjectSelect();
+                } else {
+                    showMessage('taskMessage', data.error || 'Failed to create project', 'error');
+                }
+            } catch (err) {
+                showMessage('taskMessage', 'Connection error', 'error');
+            }
+        }
+
+        async function createTask() {
+            const projectId = document.getElementById('projectSelect').value;
+            const title = document.getElementById('newTaskTitle').value.trim();
+
+            if (!projectId || projectId === 'new') {
+                showMessage('taskMessage', 'Select a project first', 'error');
+                return;
+            }
+            if (!title) {
+                showMessage('taskMessage', 'Enter task title', 'error');
+                return;
+            }
+
+            try {
+                const data = await apiCall('/api/workpro/tasks', {
+                    method: 'POST',
+                    body: JSON.stringify({ title, project_id: parseInt(projectId) })
+                });
+
+                if (data.success) {
+                    showMessage('taskMessage', `Task "${title}" created!`, 'success');
+                    document.getElementById('newTaskTitle').value = '';
+                    document.getElementById('newTaskForm').style.display = 'none';
+                    await loadTasks();
+                    onProjectSelect();
+                } else {
+                    showMessage('taskMessage', data.error || 'Failed to create task', 'error');
+                }
+            } catch (err) {
+                showMessage('taskMessage', 'Connection error', 'error');
+            }
+        }
+
+        // ===== SHOPPING LIST =====
+        function setUrgency(level) {
+            selectedUrgency = level;
+            document.querySelectorAll('.quick-actions .quick-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById('urgBtn-' + level).classList.add('active');
+        }
+
+        async function addToShoppingList() {
+            const name = document.getElementById('itemName').value.trim();
+            const qty = parseInt(document.getElementById('itemQty').value) || 1;
+            const projectId = document.getElementById('shoppingProjectSelect').value;
+            const vendorId = document.getElementById('shoppingSupplierSelect').value;
+            const notes = document.getElementById('itemNotes').value.trim();
+
+            if (!name) {
+                showMessage('shoppingMessage', 'Enter item name', 'error');
+                return;
+            }
+
+            try {
+                const data = await apiCall('/api/workpro/shopping-list', {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        material_name: name,
+                        quantity: qty,
+                        priority: selectedUrgency,
+                        project_id: projectId || null,
+                        vendor_id: vendorId || null,
+                        notes: notes
+                    })
+                });
+
+                if (data.success) {
+                    showMessage('shoppingMessage', `Added "${name}" to list!`, 'success');
+                    document.getElementById('itemName').value = '';
+                    document.getElementById('itemQty').value = '1';
+                    document.getElementById('itemNotes').value = '';
+                    document.getElementById('shoppingSupplierSelect').value = '';
+                    loadShoppingList();
+                } else {
+                    showMessage('shoppingMessage', data.error || 'Failed to add item', 'error');
+                }
+            } catch (err) {
+                showMessage('shoppingMessage', 'Connection error', 'error');
+            }
+        }
+
+        async function loadShoppingList() {
+            try {
+                const data = await apiCall('/api/workpro/shopping-list');
+                const items = data.items || [];
+
+                const container = document.getElementById('shoppingList');
+                if (items.length === 0) {
+                    container.innerHTML = '<p style="color: #94a3b8;">No items in shopping list</p>';
+                    return;
+                }
+
+                container.innerHTML = items.map(item => `
+                    <div class="list-item">
+                        <div class="title">
+                            ${item.material_name}
+                            <span class="badge priority-${item.priority}">${item.priority.replace('_', ' ')}</span>
+                        </div>
+                        <div class="meta">
+                            Qty: ${item.quantity} | ${item.project_name || 'No Project'} | ${item.status}
+                            ${item.notes ? '<br>' + item.notes : ''}
+                        </div>
+                    </div>
+                `).join('');
+            } catch (err) {
+                console.error('Error loading shopping list:', err);
+            }
+        }
+
+        // ===== VENDORS =====
+        let vendors = [];
+        async function loadVendors() {
+            try {
+                const data = await apiCall('/api/workpro/vendors');
+                vendors = data.vendors || [];
+
+                const select = document.getElementById('shoppingSupplierSelect');
+                select.innerHTML = '<option value="">-- Unknown / Any --</option>';
+                vendors.forEach(v => {
+                    select.innerHTML += `<option value="${v.id}">${v.name}</option>`;
+                });
+            } catch (err) {
+                console.error('Error loading vendors:', err);
+            }
+        }
+
+        // ===== INVENTORY =====
+        let searchTimeout;
+        function searchInventory() {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(async () => {
+                const query = document.getElementById('inventorySearch').value;
+                try {
+                    const data = await apiCall(`/api/workpro/materials/search?q=${encodeURIComponent(query)}`);
+                    renderInventory(data.materials || []);
+                } catch (err) {
+                    console.error('Error searching inventory:', err);
+                }
+            }, 300);
+        }
+
+        async function loadInventory() {
+            try {
+                const data = await apiCall('/api/workpro/materials/search');
+                renderInventory(data.materials || []);
+
+                // Show low stock items
+                const lowStock = (data.materials || []).filter(m => m.low_stock);
+                const container = document.getElementById('lowStockItems');
+
+                if (lowStock.length === 0) {
+                    container.innerHTML = '<p style="color: #10b981;">All stock levels OK</p>';
+                } else {
+                    container.innerHTML = lowStock.map(m => `
+                        <div class="list-item">
+                            <div class="title stock-low">${m.name}</div>
+                            <div class="meta">
+                                Stock: ${m.current_stock} ${m.unit} (Min: ${m.minimum_stock})
+                            </div>
+                        </div>
+                    `).join('');
+                }
+            } catch (err) {
+                console.error('Error loading inventory:', err);
+            }
+        }
+
+        function renderInventory(materials) {
+            const container = document.getElementById('inventoryResults');
+            if (materials.length === 0) {
+                container.innerHTML = '<p style="color: #94a3b8;">No materials found</p>';
+                return;
+            }
+
+            container.innerHTML = materials.slice(0, 20).map(m => `
+                <div class="list-item">
+                    <div class="title ${m.low_stock ? 'stock-low' : 'stock-ok'}">${m.name}</div>
+                    <div class="meta">
+                        Stock: ${m.current_stock} ${m.unit}
+                        ${m.low_stock ? ' (LOW - Min: ' + m.minimum_stock + ')' : ''}
+                        ${m.unit_cost ? ' | ' + formatCurrency(m.unit_cost) : ''}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // ===== ITEMS RECEIVED =====
+        let pendingItems = [];
+
+        async function loadPendingItems() {
+            try {
+                const data = await apiCall('/api/workpro/shopping-list/pending');
+                pendingItems = data.items || [];
+
+                const container = document.getElementById('pendingItems');
+                const select = document.getElementById('receiveItemSelect');
+
+                if (pendingItems.length === 0) {
+                    container.innerHTML = '<p style="color: #94a3b8;">No pending items to receive</p>';
+                    select.innerHTML = '<option value="">-- No pending items --</option>';
+                    return;
+                }
+
+                container.innerHTML = pendingItems.map(item => `
+                    <div class="list-item" onclick="selectPendingItem(${item.id})" style="cursor: pointer;">
+                        <div class="title">
+                            ${item.material_name}
+                            <span class="badge priority-${item.priority}">${item.priority.replace('_', ' ')}</span>
+                        </div>
+                        <div class="meta">
+                            Qty: ${item.quantity} | ${item.project_name || 'No Project'}
+                            ${item.notes ? '<br>' + item.notes : ''}
+                        </div>
+                    </div>
+                `).join('');
+
+                select.innerHTML = '<option value="">-- Select from pending --</option>';
+                pendingItems.forEach(item => {
+                    select.innerHTML += `<option value="${item.id}">${item.material_name} (Qty: ${item.quantity})</option>`;
+                });
+            } catch (err) {
+                console.error('Error loading pending items:', err);
+            }
+        }
+
+        function selectPendingItem(itemId) {
+            const item = pendingItems.find(i => i.id === itemId);
+            if (item) {
+                document.getElementById('receiveItemSelect').value = itemId;
+                document.getElementById('receiveQty').value = item.quantity;
+            }
+        }
+
+        // Photo preview functions
+        function previewReceiptPhoto(input) {
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    document.getElementById('previewImg').src = e.target.result;
+                    document.getElementById('photoPreview').style.display = 'block';
+                    document.getElementById('photoStatus').textContent = 'Photo ready';
+                    document.getElementById('photoStatus').style.color = '#10b981';
+                };
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+
+        function clearReceiptPhoto() {
+            document.getElementById('receivePhoto').value = '';
+            document.getElementById('photoPreview').style.display = 'none';
+            document.getElementById('photoStatus').textContent = 'No photo';
+            document.getElementById('photoStatus').style.color = '#94a3b8';
+        }
+
+        async function receiveItem() {
+            const itemId = document.getElementById('receiveItemSelect').value;
+            const qty = parseFloat(document.getElementById('receiveQty').value) || 1;
+            const unitCost = parseFloat(document.getElementById('receiveUnitCost').value) || 0;
+            const photoInput = document.getElementById('receivePhoto');
+
+            if (!itemId) {
+                showMessage('receiveMessage', 'Select an item to receive', 'error');
+                return;
+            }
+
+            try {
+                let response;
+
+                // Check if there's a photo to upload
+                if (photoInput.files && photoInput.files[0]) {
+                    // Use FormData for file upload
+                    const formData = new FormData();
+                    formData.append('quantity', qty);
+                    formData.append('unit_cost', unitCost);
+                    formData.append('photo', photoInput.files[0]);
+
+                    response = await fetch(`/api/workpro/shopping-list/${itemId}/receive`, {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': `Bearer ${token}`
+                        },
+                        body: formData
+                    });
+                } else {
+                    // No photo - use JSON
+                    response = await fetch(`/api/workpro/shopping-list/${itemId}/receive`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${token}`
+                        },
+                        body: JSON.stringify({
+                            quantity: qty,
+                            unit_cost: unitCost
+                        })
+                    });
+                }
+
+                const data = await response.json();
+
+                if (data.success) {
+                    let msg = `Received ${qty} units @ ${formatCurrency(unitCost)} each`;
+                    if (unitCost > 0) msg += ` = ${formatCurrency(qty * unitCost)}`;
+                    if (data.photo_saved) msg += ' (Photo saved)';
+                    showMessage('receiveMessage', msg, 'success');
+                    document.getElementById('receiveItemSelect').value = '';
+                    document.getElementById('receiveQty').value = '1';
+                    document.getElementById('receiveUnitCost').value = '0';
+                    clearReceiptPhoto();
+                    loadPendingItems();
+                    loadInventory();
+                } else {
+                    showMessage('receiveMessage', data.error || 'Failed to receive item', 'error');
+                }
+            } catch (err) {
+                showMessage('receiveMessage', 'Connection error', 'error');
+            }
+        }
+
+        // ===== ITEMS USED =====
+        let selectedMaterial = null;
+        let useSearchTimeout;
+
+        async function loadProjectsForUse() {
+            const useProjectSelect = document.getElementById('useProjectSelect');
+            useProjectSelect.innerHTML = '<option value="">-- No Project --</option>';
+            projects.forEach(p => {
+                useProjectSelect.innerHTML += `<option value="${p.id}">${p.name}</option>`;
+            });
+
+            // Add onchange to filter tasks
+            useProjectSelect.onchange = function() {
+                const projectId = this.value;
+                const useTaskSelect = document.getElementById('useTaskSelect');
+                useTaskSelect.innerHTML = '<option value="">-- No Task --</option>';
+                if (projectId) {
+                    const projectTasks = tasks.filter(t => t.project_id == projectId);
+                    projectTasks.forEach(t => {
+                        useTaskSelect.innerHTML += `<option value="${t.id}">${t.title}</option>`;
+                    });
+                }
+            };
+        }
+
+        function searchMaterialsForUse() {
+            clearTimeout(useSearchTimeout);
+            useSearchTimeout = setTimeout(async () => {
+                const query = document.getElementById('useMaterialSearch').value;
+                if (query.length < 2) {
+                    document.getElementById('useMaterialResults').innerHTML = '';
+                    return;
+                }
+
+                try {
+                    const data = await apiCall(`/api/workpro/materials/search?q=${encodeURIComponent(query)}`);
+                    const materials = data.materials || [];
+
+                    if (materials.length === 0) {
+                        document.getElementById('useMaterialResults').innerHTML = '<p style="color: #94a3b8;">No materials found</p>';
+                        return;
+                    }
+
+                    document.getElementById('useMaterialResults').innerHTML = materials.map(m => `
+                        <div class="list-item" onclick="selectMaterialForUse(${m.id})" style="cursor: pointer;">
+                            <div class="title ${m.low_stock ? 'stock-low' : 'stock-ok'}">${m.name}</div>
+                            <div class="meta">
+                                Stock: ${m.current_stock} ${m.unit}
+                                ${m.low_stock ? ' (LOW)' : ''}
+                            </div>
+                        </div>
+                    `).join('');
+                } catch (err) {
+                    console.error('Error searching materials:', err);
+                }
+            }, 300);
+        }
+
+        async function selectMaterialForUse(materialId) {
+            try {
+                const data = await apiCall(`/api/workpro/materials/search?q=`);
+                const material = (data.materials || []).find(m => m.id === materialId);
+
+                if (material) {
+                    selectedMaterial = material;
+                    document.getElementById('selectedMaterialInfo').innerHTML = `
+                        <strong>${material.name}</strong><br>
+                        <span style="color: #94a3b8;">Available: ${material.current_stock} ${material.unit}</span>
+                    `;
+                    document.getElementById('useFormCard').style.display = 'block';
+                    document.getElementById('useQty').value = '1';
+                    document.getElementById('useQty').max = material.current_stock;
+                    document.getElementById('useMaterialResults').innerHTML = '';
+                    document.getElementById('useMaterialSearch').value = '';
+                }
+            } catch (err) {
+                console.error('Error selecting material:', err);
+            }
+        }
+
+        async function useMaterial() {
+            if (!selectedMaterial) {
+                showMessage('useMessage', 'Select a material first', 'error');
+                return;
+            }
+
+            const qty = parseFloat(document.getElementById('useQty').value) || 1;
+            const projectId = document.getElementById('useProjectSelect').value;
+            const taskId = document.getElementById('useTaskSelect').value;
+            const notes = document.getElementById('useNotes').value.trim();
+
+            if (qty > selectedMaterial.current_stock) {
+                showMessage('useMessage', `Only ${selectedMaterial.current_stock} ${selectedMaterial.unit} available`, 'error');
+                return;
+            }
+
+            try {
+                const data = await apiCall(`/api/workpro/materials/${selectedMaterial.id}/use`, {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        quantity: qty,
+                        project_id: projectId || null,
+                        task_id: taskId || null,
+                        notes: notes
+                    })
+                });
+
+                if (data.success) {
+                    showMessage('useMessage', `Used ${qty} ${selectedMaterial.unit} of ${selectedMaterial.name}`, 'success');
+                    selectedMaterial = null;
+                    document.getElementById('useFormCard').style.display = 'none';
+                    document.getElementById('useQty').value = '1';
+                    document.getElementById('useNotes').value = '';
+                    loadUsageLog();
+                    loadInventory();
+                } else {
+                    showMessage('useMessage', data.error || 'Failed to record usage', 'error');
+                }
+            } catch (err) {
+                showMessage('useMessage', 'Connection error', 'error');
+            }
+        }
+
+        async function loadUsageLog() {
+            try {
+                const data = await apiCall('/api/workpro/materials/usage-log');
+                const logs = data.logs || [];
+
+                const container = document.getElementById('usageLog');
+                if (logs.length === 0) {
+                    container.innerHTML = '<p style="color: #94a3b8;">No recent usage</p>';
+                    return;
+                }
+
+                container.innerHTML = logs.map(log => `
+                    <div class="list-item">
+                        <div class="title">${log.material_name}</div>
+                        <div class="meta">
+                            Used: ${log.quantity} ${log.unit || ''} | ${log.used_by || 'Unknown'}
+                            ${log.project_name ? ' | ' + log.project_name : ''}
+                            <br>${new Date(log.created_at).toLocaleDateString()}
+                            ${log.notes ? ' - ' + log.notes : ''}
+                        </div>
+                    </div>
+                `).join('');
+            } catch (err) {
+                console.error('Error loading usage log:', err);
+            }
+        }
+
+        // Utility
+        function showMessage(elementId, message, type) {
+            const el = document.getElementById(elementId);
+            el.textContent = message;
+            el.className = 'message ' + type;
+            el.style.display = 'block';
+            setTimeout(() => el.style.display = 'none', 3000);
+        }
+
+        function showError(elementId, message) {
+            const el = document.getElementById(elementId);
+            el.textContent = message;
+            el.style.display = 'block';
+        }
+    </script>
+</body>
+</html>

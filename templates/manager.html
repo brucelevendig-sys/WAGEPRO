@@ -1,0 +1,833 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>WAGEPRO - Manager Portal</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #1e3a5f 0%, #0f172a 100%);
+            min-height: 100vh;
+            padding: 1rem;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        /* Login Screen */
+        #loginScreen {
+            background: white;
+            border-radius: 16px;
+            padding: 2rem;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+            margin-top: 2rem;
+        }
+
+        #loginScreen h1 {
+            color: #1e3a5f;
+            text-align: center;
+            margin-bottom: 0.5rem;
+            font-size: 1.5rem;
+        }
+
+        #loginScreen .subtitle {
+            color: #64748b;
+            text-align: center;
+            margin-bottom: 2rem;
+            font-size: 0.9rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group label {
+            display: block;
+            color: #374151;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            font-size: 0.9rem;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 1rem;
+            border: 2px solid #e5e7eb;
+            border-radius: 10px;
+            font-size: 1rem;
+            transition: border-color 0.2s;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #3b82f6;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 1rem;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.1s, opacity 0.2s;
+        }
+
+        .btn:active {
+            transform: scale(0.98);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+            color: white;
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+        }
+
+        .error-msg {
+            background: #fee2e2;
+            color: #dc2626;
+            padding: 1rem;
+            border-radius: 10px;
+            margin-bottom: 1rem;
+            text-align: center;
+            display: none;
+        }
+
+        /* Dashboard */
+        #dashboard {
+            display: none;
+        }
+
+        .header {
+            background: white;
+            border-radius: 16px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header h2 {
+            color: #1e3a5f;
+            font-size: 1rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .header .site-badge {
+            background: #059669;
+            color: white;
+            padding: 0.4rem 0.8rem;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 0.75rem;
+            display: inline-block;
+        }
+
+        .logout-btn {
+            background: #ef4444;
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            font-size: 0.8rem;
+            cursor: pointer;
+        }
+
+        /* Period Selector */
+        .period-selector {
+            background: white;
+            border-radius: 16px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .period-selector label {
+            display: block;
+            color: #374151;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .period-selector select {
+            width: 100%;
+            padding: 0.75rem;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            font-size: 1rem;
+            background: white;
+        }
+
+        /* Staff Cards */
+        .staff-card {
+            background: white;
+            border-radius: 16px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .staff-card .staff-name {
+            font-weight: 700;
+            color: #1e3a5f;
+            font-size: 1.1rem;
+            margin-bottom: 0.25rem;
+        }
+
+        .staff-card .staff-position {
+            color: #64748b;
+            font-size: 0.85rem;
+            margin-bottom: 1rem;
+        }
+
+        .week-label {
+            font-weight: 600;
+            color: #374151;
+            margin-bottom: 0.5rem;
+            font-size: 0.9rem;
+        }
+
+        .days-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 0.25rem;
+            margin-bottom: 1rem;
+        }
+
+        .day-header {
+            text-align: center;
+            font-size: 0.7rem;
+            color: #64748b;
+            font-weight: 600;
+            padding: 0.25rem;
+        }
+
+        .day-header.weekend {
+            color: #f59e0b;
+        }
+
+        .day-checkbox {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .day-checkbox input[type="checkbox"] {
+            width: 36px;
+            height: 36px;
+            cursor: pointer;
+            accent-color: #10b981;
+        }
+
+        .day-checkbox.weekend input[type="checkbox"] {
+            accent-color: #f59e0b;
+        }
+
+        /* Quick Actions */
+        .quick-actions {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .quick-btn {
+            flex: 1;
+            padding: 0.5rem;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            background: white;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: #374151;
+            cursor: pointer;
+        }
+
+        .quick-btn:active {
+            background: #f3f4f6;
+        }
+
+        /* Submit Button */
+        .submit-section {
+            background: white;
+            border-radius: 16px;
+            padding: 1rem;
+            margin-top: 1rem;
+            position: sticky;
+            bottom: 1rem;
+            box-shadow: 0 -4px 20px rgba(0,0,0,0.1);
+        }
+
+        .submit-status {
+            text-align: center;
+            margin-bottom: 0.5rem;
+            font-size: 0.9rem;
+            color: #64748b;
+        }
+
+        /* Success Message */
+        .success-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.8);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .success-box {
+            background: white;
+            border-radius: 20px;
+            padding: 2rem;
+            text-align: center;
+            margin: 1rem;
+            max-width: 350px;
+        }
+
+        .success-icon {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+        }
+
+        .success-box h3 {
+            color: #059669;
+            margin-bottom: 0.5rem;
+        }
+
+        .success-box p {
+            color: #64748b;
+            margin-bottom: 1.5rem;
+        }
+
+        /* Loading */
+        .loading {
+            text-align: center;
+            padding: 2rem;
+            color: white;
+        }
+
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #3b82f6;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 1rem;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Login Screen -->
+        <div id="loginScreen">
+            <h1>WAGEPRO</h1>
+            <p class="subtitle">Manager Portal</p>
+
+            <div id="loginError" class="error-msg"></div>
+
+            <form id="loginForm" onsubmit="handleLogin(event)">
+                <div class="form-group">
+                    <label>Username</label>
+                    <input type="text" id="username" required autocomplete="username" autocapitalize="none">
+                </div>
+                <div class="form-group">
+                    <label>Password</label>
+                    <input type="password" id="password" required autocomplete="current-password">
+                </div>
+                <button type="submit" class="btn btn-primary">Login</button>
+            </form>
+        </div>
+
+        <!-- Dashboard -->
+        <div id="dashboard">
+            <div class="header">
+                <div>
+                    <h2 id="welcomeMsg">Welcome</h2>
+                    <span class="site-badge" id="siteBadge">SITE</span>
+                </div>
+                <button class="logout-btn" onclick="logout()" style="background: #10b981;">Finished</button>
+            </div>
+
+            <div class="period-selector">
+                <label>Pay Period</label>
+                <select id="periodSelect" onchange="loadStaffDays()">
+                    <option value="">Select Period...</option>
+                </select>
+            </div>
+
+            <div class="period-selector" id="weekSelector" style="display: none;">
+                <label>Which Week?</label>
+                <div style="display: flex; gap: 0.5rem;">
+                    <button id="week1Btn" class="btn btn-primary" onclick="selectWeek(1)" style="flex: 1;">Week 1</button>
+                    <button id="week2Btn" class="btn btn-primary" onclick="selectWeek(2)" style="flex: 1; opacity: 0.6;">Week 2</button>
+                </div>
+                <p id="weekHint" style="color: #64748b; font-size: 0.8rem; margin-top: 0.5rem; text-align: center;"></p>
+            </div>
+
+            <div id="staffContainer">
+                <!-- Staff cards will be loaded here -->
+            </div>
+
+            <div class="submit-section" id="submitSection" style="display: none;">
+                <div class="submit-status" id="submitStatus">Ready to submit</div>
+                <button class="btn btn-success" onclick="submitWeek()">Submit Week</button>
+            </div>
+        </div>
+
+        <!-- Success Overlay -->
+        <div class="success-overlay" id="successOverlay">
+            <div class="success-box">
+                <div class="success-icon">✓</div>
+                <h3>Submitted Successfully!</h3>
+                <p id="successMsg">Days worked have been recorded.</p>
+                <button class="btn btn-primary" onclick="closeSuccess()">OK</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let authToken = null;
+        let currentUser = null;
+        let allStaff = [];
+        let allPeriods = [];
+        let staffDays = {}; // staffId -> {w1_monday: true, ...}
+        let selectedWeek = 1; // 1 or 2
+        let existingPayslips = {}; // staffId -> payslip data
+
+        // API Call helper
+        async function apiCall(endpoint, options = {}) {
+            const headers = {
+                'Content-Type': 'application/json',
+                ...options.headers
+            };
+            if (authToken) {
+                headers['Authorization'] = `Bearer ${authToken}`;
+            }
+            return fetch(endpoint, { ...options, headers });
+        }
+
+        // Login
+        async function handleLogin(e) {
+            e.preventDefault();
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            const errorDiv = document.getElementById('loginError');
+
+            try {
+                const response = await apiCall('/api/auth/login', {
+                    method: 'POST',
+                    body: JSON.stringify({ username, password })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    authToken = data.token;
+                    localStorage.setItem('wagepro_manager_token', authToken);
+                    await loadUserAndData();
+                } else {
+                    errorDiv.textContent = data.error || 'Login failed';
+                    errorDiv.style.display = 'block';
+                }
+            } catch (err) {
+                errorDiv.textContent = 'Connection error. Please try again.';
+                errorDiv.style.display = 'block';
+            }
+        }
+
+        // Load user info and initial data
+        async function loadUserAndData() {
+            try {
+                const response = await apiCall('/api/auth/me');
+                if (!response.ok) throw new Error('Invalid session');
+
+                currentUser = await response.json();
+
+                // Check if user is a manager (has site assigned)
+                if (!currentUser.site_id) {
+                    alert('Your account is not assigned to a site. Please contact admin.');
+                    logout();
+                    return;
+                }
+
+                document.getElementById('welcomeMsg').textContent = `Welcome, ${currentUser.full_name}`;
+                document.getElementById('siteBadge').textContent = currentUser.site_name || 'SITE';
+
+                document.getElementById('loginScreen').style.display = 'none';
+                document.getElementById('dashboard').style.display = 'block';
+
+                await loadPeriods();
+                await loadStaff();
+            } catch (err) {
+                logout();
+            }
+        }
+
+        // Load pay periods
+        async function loadPeriods() {
+            const response = await apiCall('/api/pay-periods');
+            if (response.ok) {
+                allPeriods = await response.json();
+                const select = document.getElementById('periodSelect');
+                select.innerHTML = '<option value="">Select Period...</option>';
+
+                // Show only active/draft periods
+                allPeriods
+                    .filter(p => p.status !== 'closed')
+                    .forEach(p => {
+                        const opt = document.createElement('option');
+                        opt.value = p.id;
+                        opt.textContent = `${p.year} Period ${p.period_number} (${p.start_date} - ${p.end_date})`;
+                        select.appendChild(opt);
+                    });
+            }
+        }
+
+        // Load staff for this site
+        async function loadStaff() {
+            const response = await apiCall('/api/staff');
+            if (response.ok) {
+                const allStaffData = await response.json();
+                // Filter to only this manager's site
+                allStaff = allStaffData.filter(s => s.site_id === currentUser.site_id && s.is_active);
+
+                // Sort by daily rate (highest first)
+                allStaff.sort((a, b) => (b.daily_rate || 0) - (a.daily_rate || 0));
+            }
+        }
+
+        // Load staff days for selected period
+        async function loadStaffDays() {
+            const periodId = document.getElementById('periodSelect').value;
+            if (!periodId) {
+                document.getElementById('staffContainer').innerHTML = '';
+                document.getElementById('submitSection').style.display = 'none';
+                document.getElementById('weekSelector').style.display = 'none';
+                return;
+            }
+
+            // Get existing payslips for this period
+            const response = await apiCall(`/api/payslips?pay_period_id=${periodId}`);
+            const payslips = response.ok ? await response.json() : [];
+
+            // Store existing payslips for comparison
+            existingPayslips = {};
+
+            // Build staffDays from existing payslips
+            staffDays = {};
+            allStaff.forEach(staff => {
+                const payslip = payslips.find(p => p.staff_id === staff.id);
+                if (payslip) {
+                    existingPayslips[staff.id] = { ...payslip };
+                    // Convert to booleans (API may return 0/1 integers)
+                    staffDays[staff.id] = {
+                        payslip_id: payslip.id,
+                        w1_monday: !!payslip.w1_monday,
+                        w1_tuesday: !!payslip.w1_tuesday,
+                        w1_wednesday: !!payslip.w1_wednesday,
+                        w1_thursday: !!payslip.w1_thursday,
+                        w1_friday: !!payslip.w1_friday,
+                        w1_saturday: !!payslip.w1_saturday,
+                        w1_sunday: !!payslip.w1_sunday,
+                        w2_monday: !!payslip.w2_monday,
+                        w2_tuesday: !!payslip.w2_tuesday,
+                        w2_wednesday: !!payslip.w2_wednesday,
+                        w2_thursday: !!payslip.w2_thursday,
+                        w2_friday: !!payslip.w2_friday,
+                        w2_saturday: !!payslip.w2_saturday,
+                        w2_sunday: !!payslip.w2_sunday
+                    };
+                } else {
+                    staffDays[staff.id] = {
+                        payslip_id: null,
+                        w1_monday: false, w1_tuesday: false, w1_wednesday: false,
+                        w1_thursday: false, w1_friday: false, w1_saturday: false, w1_sunday: false,
+                        w2_monday: false, w2_tuesday: false, w2_wednesday: false,
+                        w2_thursday: false, w2_friday: false, w2_saturday: false, w2_sunday: false
+                    };
+                }
+            });
+
+            // Show week selector and auto-detect week
+            document.getElementById('weekSelector').style.display = 'block';
+            autoDetectWeek();
+            selectWeek(selectedWeek);
+        }
+
+        // Auto-detect which week based on current date
+        function autoDetectWeek() {
+            const periodId = document.getElementById('periodSelect').value;
+            const period = allPeriods.find(p => p.id == periodId);
+            if (!period) return;
+
+            const today = new Date();
+            const startDate = new Date(period.start_date);
+            const daysSinceStart = Math.floor((today - startDate) / (1000 * 60 * 60 * 24));
+
+            // If we're in first 7 days, it's Week 1; otherwise Week 2
+            selectedWeek = daysSinceStart < 7 ? 1 : 2;
+
+            // Update hint
+            const dayName = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][today.getDay()];
+            document.getElementById('weekHint').textContent =
+                `Today is ${dayName}. ${selectedWeek === 1 ? 'Week 1' : 'Week 2'} suggested.`;
+        }
+
+        // Select which week to submit
+        function selectWeek(week) {
+            selectedWeek = week;
+            document.getElementById('week1Btn').style.opacity = week === 1 ? '1' : '0.6';
+            document.getElementById('week2Btn').style.opacity = week === 2 ? '1' : '0.6';
+            renderStaffCards();
+            document.getElementById('submitSection').style.display = 'block';
+            updateSubmitStatus();
+        }
+
+        // Render staff cards - only show selected week
+        function renderStaffCards() {
+            const container = document.getElementById('staffContainer');
+            const w = selectedWeek === 1 ? 'w1' : 'w2';
+
+            container.innerHTML = allStaff.map(staff => {
+                const days = staffDays[staff.id];
+                // Check if this week already has data
+                const weekDays = [`${w}_monday`, `${w}_tuesday`, `${w}_wednesday`, `${w}_thursday`, `${w}_friday`, `${w}_saturday`, `${w}_sunday`];
+                const hasExistingData = existingPayslips[staff.id] && weekDays.some(d => !!existingPayslips[staff.id][d]);
+
+                return `
+                    <div class="staff-card">
+                        <div class="staff-name">${staff.full_name}${hasExistingData ? ' <span style="color: #f59e0b; font-size: 0.7rem;">(has data)</span>' : ''}</div>
+                        <div class="staff-position">${staff.position || 'Staff'} - R${(staff.daily_rate || 0).toFixed(2)}/day</div>
+
+                        <div class="quick-actions">
+                            <button class="quick-btn" onclick="setWeekDays(${staff.id}, 'weekdays')">Mon-Fri</button>
+                            <button class="quick-btn" onclick="setWeekDays(${staff.id}, 'all')">Full Week</button>
+                            <button class="quick-btn" onclick="setWeekDays(${staff.id}, 'clear')">Clear</button>
+                        </div>
+
+                        <div class="week-label">Week ${selectedWeek}</div>
+                        <div class="days-grid">
+                            <div class="day-header">M</div>
+                            <div class="day-header">T</div>
+                            <div class="day-header">W</div>
+                            <div class="day-header">T</div>
+                            <div class="day-header">F</div>
+                            <div class="day-header weekend">S</div>
+                            <div class="day-header weekend">S</div>
+
+                            <div class="day-checkbox"><input type="checkbox" ${days[w+'_monday'] ? 'checked' : ''} onchange="toggleDay(${staff.id}, '${w}_monday', this.checked)"></div>
+                            <div class="day-checkbox"><input type="checkbox" ${days[w+'_tuesday'] ? 'checked' : ''} onchange="toggleDay(${staff.id}, '${w}_tuesday', this.checked)"></div>
+                            <div class="day-checkbox"><input type="checkbox" ${days[w+'_wednesday'] ? 'checked' : ''} onchange="toggleDay(${staff.id}, '${w}_wednesday', this.checked)"></div>
+                            <div class="day-checkbox"><input type="checkbox" ${days[w+'_thursday'] ? 'checked' : ''} onchange="toggleDay(${staff.id}, '${w}_thursday', this.checked)"></div>
+                            <div class="day-checkbox"><input type="checkbox" ${days[w+'_friday'] ? 'checked' : ''} onchange="toggleDay(${staff.id}, '${w}_friday', this.checked)"></div>
+                            <div class="day-checkbox weekend"><input type="checkbox" ${days[w+'_saturday'] ? 'checked' : ''} onchange="toggleDay(${staff.id}, '${w}_saturday', this.checked)"></div>
+                            <div class="day-checkbox weekend"><input type="checkbox" ${days[w+'_sunday'] ? 'checked' : ''} onchange="toggleDay(${staff.id}, '${w}_sunday', this.checked)"></div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Toggle a day
+        function toggleDay(staffId, day, checked) {
+            staffDays[staffId][day] = checked;
+            updateSubmitStatus();
+        }
+
+        // Quick set days for selected week only
+        function setWeekDays(staffId, mode) {
+            const days = staffDays[staffId];
+            const w = selectedWeek === 1 ? 'w1' : 'w2';
+            const weekdays = [`${w}_monday`, `${w}_tuesday`, `${w}_wednesday`, `${w}_thursday`, `${w}_friday`];
+            const weekends = [`${w}_saturday`, `${w}_sunday`];
+            const allDays = [...weekdays, ...weekends];
+
+            if (mode === 'weekdays') {
+                weekdays.forEach(d => days[d] = true);
+                weekends.forEach(d => days[d] = false);
+            } else if (mode === 'all') {
+                allDays.forEach(d => days[d] = true);
+            } else if (mode === 'clear') {
+                allDays.forEach(d => days[d] = false);
+            }
+
+            renderStaffCards();
+            updateSubmitStatus();
+        }
+
+        // Update submit status - count only selected week
+        function updateSubmitStatus() {
+            let totalDays = 0;
+            let staffWithDays = 0;
+            const w = selectedWeek === 1 ? 'w1' : 'w2';
+
+            Object.values(staffDays).forEach(days => {
+                const dayCount = Object.entries(days)
+                    .filter(([k, v]) => k.startsWith(w) && v === true)
+                    .length;
+                totalDays += dayCount;
+                if (dayCount > 0) staffWithDays++;
+            });
+
+            document.getElementById('submitStatus').textContent =
+                `Week ${selectedWeek}: ${staffWithDays} staff, ${totalDays} days`;
+        }
+
+        // Submit selected week only
+        async function submitWeek() {
+            const periodId = document.getElementById('periodSelect').value;
+            if (!periodId) {
+                alert('Please select a pay period');
+                return;
+            }
+
+            const submitBtn = document.querySelector('.submit-section .btn');
+            submitBtn.textContent = 'Submitting...';
+            submitBtn.disabled = true;
+
+            const w = selectedWeek === 1 ? 'w1' : 'w2';
+            const weekDayKeys = [`${w}_monday`, `${w}_tuesday`, `${w}_wednesday`, `${w}_thursday`, `${w}_friday`, `${w}_saturday`, `${w}_sunday`];
+
+            let successCount = 0;
+            let errorCount = 0;
+            let corrections = [];
+            let newEntries = [];
+
+            for (const staff of allStaff) {
+                const days = staffDays[staff.id];
+                const existing = existingPayslips[staff.id];
+
+                // Count days for this week
+                const dayCount = weekDayKeys.filter(k => days[k]).length;
+                const firstName = staff.full_name.split(' ')[0];
+
+                // Check if this is a correction
+                let isCorrection = false;
+                if (existing) {
+                    const oldDays = weekDayKeys.filter(k => !!existing[k]).length;
+                    if (oldDays > 0 && oldDays !== dayCount) {
+                        isCorrection = true;
+                        corrections.push({ name: firstName, old: oldDays, new: dayCount });
+                    }
+                }
+
+                if (dayCount > 0 && !isCorrection) {
+                    newEntries.push({ name: firstName, days: dayCount });
+                }
+
+                try {
+                    if (days.payslip_id) {
+                        // Update existing payslip - only update this week's days
+                        const updateData = {};
+                        weekDayKeys.forEach(k => updateData[k] = days[k]);
+
+                        const response = await apiCall(`/api/payslips/${days.payslip_id}`, {
+                            method: 'PUT',
+                            body: JSON.stringify(updateData)
+                        });
+                        if (response.ok) successCount++;
+                        else errorCount++;
+                    } else {
+                        // Create new payslip with this week's days
+                        const createData = {
+                            staff_id: staff.id,
+                            pay_period_id: parseInt(periodId)
+                        };
+                        weekDayKeys.forEach(k => createData[k] = days[k]);
+
+                        const response = await apiCall('/api/payslips', {
+                            method: 'POST',
+                            body: JSON.stringify(createData)
+                        });
+                        if (response.ok) {
+                            const newPayslip = await response.json();
+                            days.payslip_id = newPayslip.id;
+                            successCount++;
+                        } else {
+                            errorCount++;
+                        }
+                    }
+                } catch (err) {
+                    errorCount++;
+                }
+            }
+
+            submitBtn.textContent = 'Submit Week';
+            submitBtn.disabled = false;
+
+            // Notify admin via SMS with breakdown
+            if (successCount > 0) {
+                try {
+                    await apiCall('/api/manager/notify-submission', {
+                        method: 'POST',
+                        body: JSON.stringify({
+                            period_id: parseInt(periodId),
+                            week: selectedWeek,
+                            new_entries: newEntries,
+                            corrections: corrections
+                        })
+                    });
+                } catch (e) {
+                    console.log('Admin notification failed:', e);
+                }
+            }
+
+            // Show success
+            const corrMsg = corrections.length > 0 ? ` (${corrections.length} corrections)` : '';
+            document.getElementById('successMsg').textContent =
+                `Week ${selectedWeek}: Updated ${successCount} staff.${corrMsg}${errorCount > 0 ? ` (${errorCount} errors)` : ''}`;
+            document.getElementById('successOverlay').style.display = 'flex';
+        }
+
+        // Close success overlay
+        function closeSuccess() {
+            document.getElementById('successOverlay').style.display = 'none';
+            loadStaffDays(); // Reload to get updated payslip IDs
+        }
+
+        // Logout
+        function logout() {
+            authToken = null;
+            currentUser = null;
+            localStorage.removeItem('wagepro_manager_token');
+            document.getElementById('dashboard').style.display = 'none';
+            document.getElementById('loginScreen').style.display = 'block';
+            document.getElementById('loginError').style.display = 'none';
+            document.getElementById('username').value = '';
+            document.getElementById('password').value = '';
+        }
+
+        // Check for existing session on load
+        window.addEventListener('load', async () => {
+            const token = localStorage.getItem('wagepro_manager_token');
+            if (token) {
+                authToken = token;
+                await loadUserAndData();
+            }
+        });
+    </script>
+</body>
+</html>

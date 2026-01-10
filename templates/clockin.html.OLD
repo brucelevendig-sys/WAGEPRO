@@ -1,0 +1,999 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>WAGEPRO - Clock In</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            color: #eee;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 500px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* Header */
+        .header {
+            text-align: center;
+            padding: 20px 0;
+        }
+
+        .header h1 {
+            font-size: 1.8em;
+            color: #4ecca3;
+            margin-bottom: 5px;
+        }
+
+        .header .subtitle {
+            color: #888;
+            font-size: 0.9em;
+        }
+
+        /* Login Screen */
+        .login-box {
+            background: rgba(255,255,255,0.05);
+            border-radius: 20px;
+            padding: 30px;
+            margin-top: 30px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            color: #aaa;
+            font-size: 0.85em;
+            margin-bottom: 8px;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid rgba(255,255,255,0.1);
+            border-radius: 12px;
+            background: rgba(0,0,0,0.3);
+            color: #fff;
+            font-size: 1.2em;
+            text-align: center;
+            letter-spacing: 2px;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #4ecca3;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 18px;
+            border: none;
+            border-radius: 12px;
+            font-size: 1.1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #4ecca3 0%, #38a3a5 100%);
+            color: #1a1a2e;
+        }
+
+        .btn-primary:active {
+            transform: scale(0.98);
+        }
+
+        .btn-primary:disabled {
+            background: #333;
+            color: #666;
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #e94560 0%, #c73659 100%);
+            color: white;
+        }
+
+        .btn-secondary {
+            background: rgba(255,255,255,0.1);
+            color: #aaa;
+            border: 2px solid rgba(255,255,255,0.2);
+        }
+
+        /* Dashboard */
+        .dashboard {
+            display: none;
+        }
+
+        .worker-info {
+            background: rgba(255,255,255,0.05);
+            border-radius: 16px;
+            padding: 20px;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .worker-name {
+            font-size: 1.4em;
+            font-weight: 700;
+            color: #4ecca3;
+            margin-bottom: 5px;
+        }
+
+        .site-name {
+            color: #888;
+            font-size: 0.9em;
+        }
+
+        /* Clock Display */
+        .clock-display {
+            text-align: center;
+            padding: 30px 0;
+        }
+
+        .current-time {
+            font-size: 3.5em;
+            font-weight: 700;
+            color: #fff;
+            font-family: 'SF Mono', 'Courier New', monospace;
+        }
+
+        .current-date {
+            color: #888;
+            font-size: 1.1em;
+            margin-top: 5px;
+        }
+
+        /* Status Cards */
+        .status-card {
+            background: rgba(255,255,255,0.05);
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 15px;
+        }
+
+        .status-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .status-row:last-child {
+            border-bottom: none;
+        }
+
+        .status-label {
+            color: #888;
+            font-size: 0.9em;
+        }
+
+        .status-value {
+            font-weight: 600;
+            font-size: 1.1em;
+        }
+
+        .status-value.success {
+            color: #4ecca3;
+        }
+
+        .status-value.warning {
+            color: #f39c12;
+        }
+
+        .status-value.error {
+            color: #e94560;
+        }
+
+        /* GPS Status */
+        .gps-status {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            padding: 15px;
+            background: rgba(0,0,0,0.2);
+            border-radius: 12px;
+            margin-bottom: 20px;
+        }
+
+        .gps-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        .gps-dot.searching {
+            background: #f39c12;
+        }
+
+        .gps-dot.found {
+            background: #4ecca3;
+        }
+
+        .gps-dot.error {
+            background: #e94560;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        /* Clock In/Out Buttons */
+        .clock-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .clock-btn {
+            padding: 25px;
+            border-radius: 16px;
+            font-size: 1.3em;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+        }
+
+        .clock-btn .icon {
+            font-size: 1.5em;
+        }
+
+        .clock-btn.signin {
+            background: linear-gradient(135deg, #4ecca3 0%, #38a3a5 100%);
+            color: #1a1a2e;
+        }
+
+        .clock-btn.signout {
+            background: linear-gradient(135deg, #e94560 0%, #c73659 100%);
+            color: white;
+        }
+
+        .clock-btn:disabled {
+            background: #333;
+            color: #666;
+        }
+
+        /* Picture Upload */
+        .picture-section {
+            background: rgba(255,255,255,0.05);
+            border-radius: 16px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+
+        .picture-section h3 {
+            color: #4ecca3;
+            margin-bottom: 15px;
+            font-size: 1.1em;
+        }
+
+        .picture-count {
+            text-align: center;
+            padding: 15px;
+            background: rgba(0,0,0,0.2);
+            border-radius: 12px;
+            margin-bottom: 15px;
+        }
+
+        .picture-count .number {
+            font-size: 2.5em;
+            font-weight: 700;
+            color: #4ecca3;
+        }
+
+        .picture-count .label {
+            color: #888;
+            font-size: 0.85em;
+        }
+
+        .upload-btn {
+            width: 100%;
+            padding: 20px;
+            border: 2px dashed rgba(255,255,255,0.3);
+            border-radius: 12px;
+            background: transparent;
+            color: #aaa;
+            font-size: 1em;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .upload-btn:active {
+            border-color: #4ecca3;
+            color: #4ecca3;
+        }
+
+        #pictureInput {
+            display: none;
+        }
+
+        .picture-preview {
+            margin-top: 15px;
+            display: none;
+        }
+
+        .picture-preview img {
+            width: 100%;
+            border-radius: 12px;
+            margin-bottom: 10px;
+        }
+
+        .picture-preview .caption-input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid rgba(255,255,255,0.1);
+            border-radius: 8px;
+            background: rgba(0,0,0,0.3);
+            color: #fff;
+            font-size: 0.9em;
+            margin-bottom: 10px;
+        }
+
+        /* Picture Thumbnails */
+        .picture-thumbnails {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-top: 15px;
+        }
+
+        .thumb {
+            width: 60px;
+            height: 60px;
+            border-radius: 8px;
+            object-fit: cover;
+            border: 2px solid rgba(255,255,255,0.2);
+        }
+
+        /* Messages */
+        .message {
+            padding: 15px;
+            border-radius: 12px;
+            margin-bottom: 15px;
+            text-align: center;
+            display: none;
+        }
+
+        .message.error {
+            background: rgba(233, 69, 96, 0.2);
+            color: #e94560;
+            border: 1px solid #e94560;
+        }
+
+        .message.success {
+            background: rgba(78, 204, 163, 0.2);
+            color: #4ecca3;
+            border: 1px solid #4ecca3;
+        }
+
+        /* Logout */
+        .logout-btn {
+            margin-top: 30px;
+            background: transparent;
+            border: 1px solid rgba(255,255,255,0.2);
+            color: #888;
+            padding: 12px;
+            border-radius: 8px;
+            width: 100%;
+            cursor: pointer;
+        }
+
+        /* Loading Overlay */
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.8);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .loading-spinner {
+            text-align: center;
+            color: #fff;
+        }
+
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid rgba(255,255,255,0.1);
+            border-top-color: #4ecca3;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Distance Warning */
+        .distance-warning {
+            background: rgba(243, 156, 18, 0.2);
+            border: 1px solid #f39c12;
+            color: #f39c12;
+            padding: 12px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            text-align: center;
+            font-size: 0.9em;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Login Screen -->
+        <div id="loginScreen">
+            <div class="header">
+                <h1>WAGEPRO</h1>
+                <p class="subtitle">Worker Clock-In System</p>
+            </div>
+
+            <div class="login-box">
+                <div id="loginError" class="message error"></div>
+
+                <div class="form-group">
+                    <label>Enter Your Mobile Number</label>
+                    <input type="tel" id="mobileInput" placeholder="083 123 4567"
+                           autocomplete="tel" inputmode="tel">
+                </div>
+
+                <button class="btn btn-primary" id="loginBtn" onclick="login()">
+                    Clock In / Out
+                </button>
+            </div>
+        </div>
+
+        <!-- Dashboard Screen -->
+        <div id="dashboard" class="dashboard">
+            <div class="worker-info">
+                <div class="worker-name" id="workerName">Worker Name</div>
+                <div class="site-name" id="siteName">Site Name</div>
+            </div>
+
+            <div class="clock-display">
+                <div class="current-time" id="currentTime">--:--</div>
+                <div class="current-date" id="currentDate">Loading...</div>
+            </div>
+
+            <div id="statusMessage" class="message"></div>
+            <div id="distanceWarning" class="distance-warning"></div>
+
+            <div class="gps-status" id="gpsStatus">
+                <div class="gps-dot" id="gpsDot"></div>
+                <span id="gpsText">Getting location...</span>
+            </div>
+
+            <div class="gps-exempt-badge" id="gpsExemptBadge" style="display: none; background: rgba(78,204,163,0.2); border: 1px solid #4ecca3; color: #4ecca3; padding: 10px; border-radius: 10px; text-align: center; margin-bottom: 15px;">
+                GPS Exempt - Can clock in from any location
+            </div>
+
+            <div class="status-card">
+                <div class="status-row">
+                    <span class="status-label">Sign In</span>
+                    <span class="status-value" id="signinStatus">--:--</span>
+                </div>
+                <div class="status-row">
+                    <span class="status-label">Sign Out</span>
+                    <span class="status-value" id="signoutStatus">--:--</span>
+                </div>
+                <div class="status-row">
+                    <span class="status-label">Hours Worked</span>
+                    <span class="status-value" id="hoursWorked">--</span>
+                </div>
+            </div>
+
+            <div class="clock-buttons">
+                <button class="btn clock-btn signin" id="signinBtn" onclick="signIn()">
+                    <span class="icon">&#x2192;</span>
+                    <span>SIGN IN</span>
+                </button>
+                <button class="btn clock-btn signout" id="signoutBtn" onclick="signOut()" disabled>
+                    <span class="icon">&#x2190;</span>
+                    <span>SIGN OUT</span>
+                </button>
+            </div>
+
+            <!-- Picture Upload Section -->
+            <div class="picture-section" id="pictureSection" style="display: none;">
+                <h3>Progress Pictures</h3>
+                <div class="picture-count">
+                    <div class="number" id="pictureCount">0</div>
+                    <div class="label">photos uploaded today</div>
+                </div>
+
+                <button class="upload-btn" id="uploadBtn" onclick="document.getElementById('pictureInput').click()">
+                    + Take or Upload Photo
+                </button>
+                <input type="file" id="pictureInput" accept="image/*" capture="environment" onchange="previewPicture(event)">
+
+                <div class="picture-preview" id="picturePreview">
+                    <img id="previewImg" src="" alt="Preview">
+                    <input type="text" class="caption-input" id="captionInput" placeholder="Add description (optional)">
+                    <button class="btn btn-primary" onclick="uploadPicture()">Upload Photo</button>
+                    <button class="btn btn-secondary" onclick="cancelPreview()" style="margin-top: 10px;">Cancel</button>
+                </div>
+
+                <div class="picture-thumbnails" id="pictureThumbs"></div>
+            </div>
+
+            <button class="logout-btn" onclick="logout()">
+                Sign Out of App
+            </button>
+        </div>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="loading-spinner">
+            <div class="spinner"></div>
+            <div id="loadingText">Loading...</div>
+        </div>
+    </div>
+
+    <script>
+        // State
+        let token = localStorage.getItem('wagepro_clockin_token');
+        let currentPosition = null;
+        let siteLocation = null;
+        let watchId = null;
+        let selectedFile = null;
+        let isGpsExempt = false;
+
+        // Check if already logged in
+        if (token) {
+            showDashboard();
+        }
+
+        // Update clock every second
+        setInterval(updateClock, 1000);
+        updateClock();
+
+        function updateClock() {
+            const now = new Date();
+            const timeStr = now.toLocaleTimeString('en-ZA', { hour: '2-digit', minute: '2-digit' });
+            const dateStr = now.toLocaleDateString('en-ZA', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+
+            document.getElementById('currentTime').textContent = timeStr;
+            document.getElementById('currentDate').textContent = dateStr;
+        }
+
+        // Login with mobile number
+        async function login() {
+            const mobile = document.getElementById('mobileInput').value.trim();
+            const loginBtn = document.getElementById('loginBtn');
+            const errorDiv = document.getElementById('loginError');
+
+            if (!mobile) {
+                showError('loginError', 'Please enter your mobile number');
+                return;
+            }
+
+            loginBtn.disabled = true;
+            loginBtn.textContent = 'Checking...';
+            errorDiv.style.display = 'none';
+
+            try {
+                const response = await fetch('/api/clockin/worker-login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ mobile })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    token = data.token;
+                    localStorage.setItem('wagepro_clockin_token', token);
+
+                    if (data.site) {
+                        siteLocation = data.site;
+                    }
+
+                    showDashboard();
+                } else {
+                    showError('loginError', data.error || 'Login failed');
+                }
+            } catch (err) {
+                showError('loginError', 'Connection error. Please try again.');
+            }
+
+            loginBtn.disabled = false;
+            loginBtn.textContent = 'Clock In / Out';
+        }
+
+        // Show dashboard
+        async function showDashboard() {
+            document.getElementById('loginScreen').style.display = 'none';
+            document.getElementById('dashboard').style.display = 'block';
+
+            // Start GPS tracking
+            startGPSTracking();
+
+            // Load status
+            await loadStatus();
+        }
+
+        // Start GPS tracking
+        function startGPSTracking() {
+            const gpsDot = document.getElementById('gpsDot');
+            const gpsText = document.getElementById('gpsText');
+
+            gpsDot.className = 'gps-dot searching';
+            gpsText.textContent = 'Getting location...';
+
+            if (!navigator.geolocation) {
+                gpsDot.className = 'gps-dot error';
+                gpsText.textContent = 'GPS not available';
+                return;
+            }
+
+            watchId = navigator.geolocation.watchPosition(
+                (position) => {
+                    currentPosition = {
+                        latitude: position.coords.latitude,
+                        longitude: position.coords.longitude,
+                        accuracy: position.coords.accuracy
+                    };
+
+                    gpsDot.className = 'gps-dot found';
+
+                    // Check distance from site
+                    if (siteLocation && siteLocation.latitude && siteLocation.longitude) {
+                        const distance = haversineDistance(
+                            currentPosition.latitude,
+                            currentPosition.longitude,
+                            siteLocation.latitude,
+                            siteLocation.longitude
+                        );
+
+                        if (distance <= (siteLocation.radius || 100)) {
+                            gpsText.textContent = `At ${siteLocation.name} (${Math.round(distance)}m)`;
+                            document.getElementById('distanceWarning').style.display = 'none';
+                        } else {
+                            gpsText.textContent = `${Math.round(distance)}m from site`;
+                            document.getElementById('distanceWarning').textContent =
+                                `You are ${Math.round(distance)}m away from ${siteLocation.name}. Clock-in may be flagged for review.`;
+                            document.getElementById('distanceWarning').style.display = 'block';
+                        }
+                    } else {
+                        gpsText.textContent = `Location found (${Math.round(currentPosition.accuracy)}m accuracy)`;
+                    }
+                },
+                (error) => {
+                    gpsDot.className = 'gps-dot error';
+                    gpsText.textContent = 'Location error: ' + error.message;
+                },
+                {
+                    enableHighAccuracy: true,
+                    timeout: 10000,
+                    maximumAge: 30000
+                }
+            );
+        }
+
+        // Haversine distance calculation
+        function haversineDistance(lat1, lon1, lat2, lon2) {
+            const R = 6371000; // Earth radius in meters
+            const dLat = (lat2 - lat1) * Math.PI / 180;
+            const dLon = (lon2 - lon1) * Math.PI / 180;
+            const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                      Math.sin(dLon/2) * Math.sin(dLon/2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+            return R * c;
+        }
+
+        // Load status
+        async function loadStatus() {
+            try {
+                const response = await fetch('/api/clockin/status', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                if (response.status === 401) {
+                    logout();
+                    return;
+                }
+
+                const data = await response.json();
+
+                // Update worker info
+                document.getElementById('workerName').textContent = data.staff_name || 'Worker';
+                document.getElementById('siteName').textContent = data.site?.name || 'No site assigned';
+
+                if (data.site) {
+                    siteLocation = data.site;
+                }
+
+                // Update status display based on can_signin/can_signout flags
+                const canSignin = data.can_signin !== undefined ? data.can_signin : !data.has_signin;
+                const canSignout = data.can_signout !== undefined ? data.can_signout : (data.has_signin && !data.has_signout);
+
+                // Show current shift times
+                if (data.has_signin) {
+                    const signinTime = new Date(data.signin_time);
+                    document.getElementById('signinStatus').textContent =
+                        signinTime.toLocaleTimeString('en-ZA', { hour: '2-digit', minute: '2-digit' });
+                    document.getElementById('signinStatus').className = 'status-value success';
+                } else {
+                    document.getElementById('signinStatus').textContent = 'Not signed in';
+                    document.getElementById('signinStatus').className = 'status-value';
+                }
+
+                if (data.has_signout) {
+                    const signoutTime = new Date(data.signout_time);
+                    document.getElementById('signoutStatus').textContent =
+                        signoutTime.toLocaleTimeString('en-ZA', { hour: '2-digit', minute: '2-digit' });
+                    document.getElementById('signoutStatus').className = 'status-value success';
+                } else {
+                    document.getElementById('signoutStatus').textContent = '--:--';
+                    document.getElementById('signoutStatus').className = 'status-value';
+                }
+
+                // Enable/disable buttons based on shift state
+                document.getElementById('signinBtn').disabled = !canSignin;
+                document.getElementById('signoutBtn').disabled = !canSignout;
+
+                // Show picture section if currently signed in (active shift)
+                document.getElementById('pictureSection').style.display = canSignout ? 'block' : 'none';
+
+                // Show shift count if multiple shifts
+                if (data.shift_count > 1) {
+                    document.getElementById('signinStatus').textContent += ` (${data.shift_count} shifts)`;
+                }
+
+                if (data.hours_worked !== null && data.hours_worked > 0) {
+                    document.getElementById('hoursWorked').textContent =
+                        data.hours_worked.toFixed(2) + ' hrs';
+                    document.getElementById('hoursWorked').className = 'status-value success';
+                } else {
+                    document.getElementById('hoursWorked').textContent = '0.00 hrs';
+                    document.getElementById('hoursWorked').className = 'status-value';
+                }
+
+                // Update picture count
+                document.getElementById('pictureCount').textContent = data.picture_count || 0;
+
+                // GPS verification status
+                if (data.gps_verified) {
+                    document.getElementById('distanceWarning').style.display = 'none';
+                }
+
+                // GPS Exempt badge
+                if (data.gps_exempt) {
+                    isGpsExempt = true;
+                    document.getElementById('gpsExemptBadge').style.display = 'block';
+                    document.getElementById('gpsStatus').style.display = 'none';
+                    document.getElementById('distanceWarning').style.display = 'none';
+                }
+
+            } catch (err) {
+                console.error('Failed to load status:', err);
+            }
+        }
+
+        // Sign In
+        async function signIn() {
+            if (!currentPosition && !isGpsExempt) {
+                showMessage('statusMessage', 'Waiting for GPS location...', 'error');
+                return;
+            }
+
+            showLoading('Signing in...');
+
+            try {
+                // For GPS exempt users, send null coordinates
+                const payload = isGpsExempt && !currentPosition ? {
+                    latitude: null,
+                    longitude: null,
+                    accuracy: null
+                } : {
+                    latitude: currentPosition.latitude,
+                    longitude: currentPosition.longitude,
+                    accuracy: currentPosition.accuracy
+                };
+
+                const response = await fetch('/api/clockin/signin', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                const data = await response.json();
+                hideLoading();
+
+                if (data.success) {
+                    showMessage('statusMessage', 'Signed in successfully!', 'success');
+                    await loadStatus();
+                } else {
+                    showMessage('statusMessage', data.error || 'Sign in failed', 'error');
+                }
+            } catch (err) {
+                hideLoading();
+                showMessage('statusMessage', 'Connection error', 'error');
+            }
+        }
+
+        // Sign Out
+        async function signOut() {
+            if (!confirm('Are you sure you want to sign out?')) return;
+
+            if (!currentPosition && !isGpsExempt) {
+                showMessage('statusMessage', 'Waiting for GPS location...', 'error');
+                return;
+            }
+
+            showLoading('Signing out...');
+
+            try {
+                // For GPS exempt users, send null coordinates
+                const payload = isGpsExempt && !currentPosition ? {
+                    latitude: null,
+                    longitude: null,
+                    accuracy: null
+                } : {
+                    latitude: currentPosition.latitude,
+                    longitude: currentPosition.longitude,
+                    accuracy: currentPosition.accuracy
+                };
+
+                const response = await fetch('/api/clockin/signout', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                const data = await response.json();
+                hideLoading();
+
+                if (data.success) {
+                    showMessage('statusMessage', `Signed out! Worked ${data.hours_worked} hours`, 'success');
+                    await loadStatus();
+                } else {
+                    showMessage('statusMessage', data.error || 'Sign out failed', 'error');
+                }
+            } catch (err) {
+                hideLoading();
+                showMessage('statusMessage', 'Connection error', 'error');
+            }
+        }
+
+        // Picture handling
+        function previewPicture(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            selectedFile = file;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                document.getElementById('previewImg').src = e.target.result;
+                document.getElementById('picturePreview').style.display = 'block';
+                document.getElementById('uploadBtn').style.display = 'none';
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function cancelPreview() {
+            selectedFile = null;
+            document.getElementById('picturePreview').style.display = 'none';
+            document.getElementById('uploadBtn').style.display = 'block';
+            document.getElementById('pictureInput').value = '';
+            document.getElementById('captionInput').value = '';
+        }
+
+        async function uploadPicture() {
+            if (!selectedFile) return;
+
+            showLoading('Uploading photo...');
+
+            const formData = new FormData();
+            formData.append('picture', selectedFile);
+            formData.append('description', document.getElementById('captionInput').value);
+
+            if (currentPosition) {
+                formData.append('latitude', currentPosition.latitude);
+                formData.append('longitude', currentPosition.longitude);
+                formData.append('accuracy', currentPosition.accuracy);
+            }
+
+            try {
+                const response = await fetch('/api/clockin/upload-picture', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: formData
+                });
+
+                const data = await response.json();
+                hideLoading();
+
+                if (data.success) {
+                    showMessage('statusMessage', 'Photo uploaded!', 'success');
+                    document.getElementById('pictureCount').textContent = data.picture_count;
+                    cancelPreview();
+                } else {
+                    showMessage('statusMessage', data.error || 'Upload failed', 'error');
+                }
+            } catch (err) {
+                hideLoading();
+                showMessage('statusMessage', 'Upload error', 'error');
+            }
+        }
+
+        // Logout
+        function logout() {
+            if (watchId) {
+                navigator.geolocation.clearWatch(watchId);
+            }
+
+            localStorage.removeItem('wagepro_clockin_token');
+            token = null;
+            currentPosition = null;
+
+            document.getElementById('dashboard').style.display = 'none';
+            document.getElementById('loginScreen').style.display = 'block';
+            document.getElementById('mobileInput').value = '';
+        }
+
+        // Utility functions
+        function showLoading(text) {
+            document.getElementById('loadingText').textContent = text || 'Loading...';
+            document.getElementById('loadingOverlay').style.display = 'flex';
+        }
+
+        function hideLoading() {
+            document.getElementById('loadingOverlay').style.display = 'none';
+        }
+
+        function showError(elementId, message) {
+            const el = document.getElementById(elementId);
+            el.textContent = message;
+            el.className = 'message error';
+            el.style.display = 'block';
+            setTimeout(() => { el.style.display = 'none'; }, 5000);
+        }
+
+        function showMessage(elementId, message, type) {
+            const el = document.getElementById(elementId);
+            el.textContent = message;
+            el.className = 'message ' + type;
+            el.style.display = 'block';
+            setTimeout(() => { el.style.display = 'none'; }, 5000);
+        }
+    </script>
+</body>
+</html>

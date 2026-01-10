@@ -1,0 +1,29 @@
+# Exclude everything first
+*
+
+# Include only what we need
+!.gitignore
+!app.py
+!Procfile
+!requirements.txt
+!runtime.txt
+
+# Include app folder and contents
+!app/
+!app/**
+
+# Include templates
+!templates/
+!templates/**
+
+# Include static if exists
+!static/
+!static/**
+
+# Exclude database files
+*.db
+
+# Exclude pycache
+__pycache__/
+app/__pycache__/
+app/models/__pycache__/

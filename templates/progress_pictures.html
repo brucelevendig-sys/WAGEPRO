@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WAGEPRO - Progress Pictures</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container { max-width: 1400px; margin: 0 auto; }
+        .header {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        .header h1 { color: #667eea; }
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .btn-primary { background: #667eea; color: white; }
+        .btn-secondary { background: #6b7280; color: white; }
+        .btn-success { background: #10b981; color: white; }
+        .btn-danger { background: #ef4444; color: white; }
+        .btn:hover { opacity: 0.9; }
+
+        .filters {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        .filters select, .filters input {
+            padding: 10px 15px;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            font-size: 1rem;
+        }
+
+        .pictures-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+        }
+        .picture-card {
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        }
+        .picture-card img {
+            width: 100%;
+            height: 250px;
+            object-fit: cover;
+            cursor: pointer;
+        }
+        .picture-info {
+            padding: 15px;
+        }
+        .picture-info h3 {
+            color: #374151;
+            margin-bottom: 5px;
+        }
+        .picture-info p {
+            color: #6b7280;
+            font-size: 0.9em;
+            margin: 3px 0;
+        }
+        .picture-status {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.8em;
+            font-weight: 600;
+            margin-top: 10px;
+        }
+        .status-PENDING { background: #fef3c7; color: #d97706; }
+        .status-APPROVED { background: #d1fae5; color: #059669; }
+        .status-REJECTED { background: #fee2e2; color: #dc2626; }
+
+        .picture-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        .picture-actions button {
+            flex: 1;
+            padding: 8px;
+            font-size: 0.85em;
+        }
+
+        /* Lightbox */
+        .lightbox {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.9);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+        .lightbox.show { display: flex; }
+        .lightbox img {
+            max-width: 90%;
+            max-height: 90%;
+            border-radius: 8px;
+        }
+        .lightbox-close {
+            position: absolute;
+            top: 20px;
+            right: 30px;
+            color: white;
+            font-size: 2em;
+            cursor: pointer;
+        }
+
+        .empty-state {
+            background: white;
+            border-radius: 12px;
+            padding: 60px;
+            text-align: center;
+            color: #6b7280;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Progress Pictures</h1>
+            <div>
+                <a href="javascript:history.back()" class="btn btn-secondary">Back</a>
+                <a href="/#admin" class="btn btn-secondary" onclick="localStorage.setItem('wagepro_tab', 'admin')">Dashboard</a>
+            </div>
+        </div>
+
+        <div class="filters">
+            <label>
+                <strong>Date:</strong>
+                <input type="date" id="filterDate" onchange="loadPictures()">
+            </label>
+            <label>
+                <strong>Staff:</strong>
+                <select id="filterStaff" onchange="loadPictures()">
+                    <option value="">All Staff</option>
+                </select>
+            </label>
+            <label>
+                <strong>Status:</strong>
+                <select id="filterStatus" onchange="loadPictures()">
+                    <option value="">All</option>
+                    <option value="PENDING">Pending</option>
+                    <option value="APPROVED">Approved</option>
+                    <option value="REJECTED">Rejected</option>
+                </select>
+            </label>
+            <button class="btn btn-primary" onclick="loadPictures()">Refresh</button>
+        </div>
+
+        <div class="pictures-grid" id="picturesGrid">
+            <div class="empty-state">Loading pictures...</div>
+        </div>
+    </div>
+
+    <!-- Lightbox -->
+    <div class="lightbox" id="lightbox" onclick="closeLightbox()">
+        <span class="lightbox-close">&times;</span>
+        <img id="lightboxImg" src="" alt="Full size">
+    </div>
+
+    <script>
+        const token = localStorage.getItem('wagepro_token');
+        if (!token) window.location.href = '/';
+
+        // Set default date to today
+        document.getElementById('filterDate').value = new Date().toISOString().split('T')[0];
+
+        // Load staff list
+        async function loadStaff() {
+            try {
+                const response = await fetch('/api/staff', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const data = await response.json();
+                const select = document.getElementById('filterStaff');
+
+                // API returns array directly
+                const staffList = Array.isArray(data) ? data : (data.staff || []);
+
+                staffList.forEach(s => {
+                    const opt = document.createElement('option');
+                    opt.value = s.id;
+                    opt.textContent = s.full_name || `${s.first_name} ${s.last_name}`;
+                    select.appendChild(opt);
+                });
+
+                console.log('Loaded', staffList.length, 'staff members');
+            } catch (err) {
+                console.error('Failed to load staff:', err);
+            }
+        }
+
+        // Load pictures
+        async function loadPictures() {
+            const date = document.getElementById('filterDate').value;
+            const staffId = document.getElementById('filterStaff').value;
+            const status = document.getElementById('filterStatus').value;
+
+            let url = '/api/admin/progress-pictures?';
+            if (date) url += `date=${date}&`;
+            if (staffId) url += `staff_id=${staffId}&`;
+            if (status) url += `status=${status}&`;
+
+            try {
+                const response = await fetch(url, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const data = await response.json();
+
+                const grid = document.getElementById('picturesGrid');
+
+                if (!data.success || !data.pictures || data.pictures.length === 0) {
+                    grid.innerHTML = '<div class="empty-state">No pictures found for selected filters</div>';
+                    return;
+                }
+
+                grid.innerHTML = data.pictures.map(pic => `
+                    <div class="picture-card">
+                        <img src="${pic.url}" alt="Progress picture" onclick="openLightbox('${pic.url}')">
+                        <div class="picture-info">
+                            <h3>${pic.staff_name}</h3>
+                            <p><strong>Date:</strong> ${new Date(pic.taken_at).toLocaleString()}</p>
+                            <p><strong>Description:</strong> ${pic.description || 'No description'}</p>
+                            ${pic.latitude ? `<p><strong>Location:</strong> ${pic.latitude.toFixed(4)}, ${pic.longitude.toFixed(4)}</p>` : ''}
+                            <span class="picture-status status-${pic.status}">${pic.status}</span>
+                            ${pic.status === 'PENDING' ? `
+                                <div class="picture-actions">
+                                    <button class="btn btn-success" onclick="reviewPicture(${pic.id}, 'approve')">Approve</button>
+                                    <button class="btn btn-danger" onclick="reviewPicture(${pic.id}, 'reject')">Reject</button>
+                                </div>
+                            ` : ''}
+                        </div>
+                    </div>
+                `).join('');
+
+            } catch (err) {
+                console.error('Failed to load pictures:', err);
+                document.getElementById('picturesGrid').innerHTML =
+                    '<div class="empty-state">Error loading pictures</div>';
+            }
+        }
+
+        // Review picture
+        async function reviewPicture(picId, action) {
+            if (!confirm(`${action.charAt(0).toUpperCase() + action.slice(1)} this picture?`)) return;
+
+            try {
+                const response = await fetch(`/api/admin/progress-pictures/${picId}/review`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ action })
+                });
+                const data = await response.json();
+                if (data.success) {
+                    loadPictures();
+                } else {
+                    alert(data.error || 'Failed to review picture');
+                }
+            } catch (err) {
+                alert('Error: ' + err.message);
+            }
+        }
+
+        // Lightbox
+        function openLightbox(url) {
+            document.getElementById('lightboxImg').src = url;
+            document.getElementById('lightbox').classList.add('show');
+        }
+
+        function closeLightbox() {
+            document.getElementById('lightbox').classList.remove('show');
+        }
+
+        // Init
+        loadStaff();
+        loadPictures();
+    </script>
+</body>
+</html>

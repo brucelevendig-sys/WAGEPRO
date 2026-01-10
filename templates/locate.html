@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Share Location - WAGEPRO</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            color: #fff;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 400px;
+            width: 100%;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            font-size: 2em;
+            color: #4ecca3;
+            margin-bottom: 5px;
+        }
+
+        .header .subtitle {
+            color: #888;
+            font-size: 0.9em;
+        }
+
+        .card {
+            background: rgba(255,255,255,0.05);
+            border-radius: 20px;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .staff-info {
+            background: rgba(78,204,163,0.1);
+            border: 1px solid #4ecca3;
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+
+        .staff-name {
+            font-size: 1.3em;
+            font-weight: 600;
+            color: #4ecca3;
+        }
+
+        .request-info {
+            color: #aaa;
+            font-size: 0.9em;
+            margin-top: 5px;
+        }
+
+        .message {
+            color: #ccc;
+            margin-bottom: 25px;
+            line-height: 1.5;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 20px;
+            border: none;
+            border-radius: 15px;
+            font-size: 1.2em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #4ecca3 0%, #38a3a5 100%);
+            color: #1a1a2e;
+            animation: pulse 2s infinite;
+        }
+
+        .btn-primary:active {
+            transform: scale(0.98);
+        }
+
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(78, 204, 163, 0.7); }
+            70% { box-shadow: 0 0 0 15px rgba(78, 204, 163, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(78, 204, 163, 0); }
+        }
+
+        /* Loading State */
+        .loading {
+            display: none;
+        }
+
+        .spinner {
+            width: 60px;
+            height: 60px;
+            border: 4px solid rgba(255,255,255,0.1);
+            border-top-color: #4ecca3;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Success State */
+        .success {
+            display: none;
+        }
+
+        .success-icon {
+            font-size: 4em;
+            color: #4ecca3;
+            margin-bottom: 15px;
+        }
+
+        .location-info {
+            background: rgba(78,204,163,0.1);
+            border-radius: 12px;
+            padding: 15px;
+            margin: 20px 0;
+        }
+
+        .coords {
+            font-family: monospace;
+            color: #4ecca3;
+            font-size: 0.9em;
+        }
+
+        /* Error State */
+        .error {
+            display: none;
+        }
+
+        .error-icon {
+            font-size: 4em;
+            color: #e94560;
+            margin-bottom: 15px;
+        }
+
+        .btn-retry {
+            background: transparent;
+            border: 2px solid rgba(255,255,255,0.3);
+            color: #fff;
+        }
+
+        /* Expired State */
+        .expired {
+            display: none;
+        }
+
+        .expired-icon {
+            font-size: 4em;
+            color: #f39c12;
+            margin-bottom: 15px;
+        }
+
+        .privacy-note {
+            color: #666;
+            font-size: 0.8em;
+            margin-top: 20px;
+        }
+
+        .footer {
+            text-align: center;
+            color: #555;
+            font-size: 0.8em;
+            margin-top: 30px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>WAGEPRO</h1>
+            <div class="subtitle">Whereabouts Check</div>
+        </div>
+
+        <div class="card">
+            <!-- Request State -->
+            <div id="requestState">
+                <div class="staff-info">
+                    <div class="staff-name">{{ staff_name }}</div>
+                    {% if reason %}
+                    <div class="request-info">{{ reason }}</div>
+                    {% endif %}
+                </div>
+
+                <p class="message">
+                    Your employer has requested your current location.
+                    Tap the button below to share your GPS position.
+                </p>
+
+                <button class="btn btn-primary" onclick="requestLocation()">
+                    📍 SHARE MY LOCATION
+                </button>
+
+                <p class="privacy-note">
+                    🔒 Your location is only used for this request and is not tracked continuously.
+                </p>
+            </div>
+
+            <!-- Loading State -->
+            <div id="loadingState" class="loading">
+                <div class="spinner"></div>
+                <h3>Getting your location...</h3>
+                <p style="color: #888; margin-top: 10px;">Please allow location access when prompted</p>
+            </div>
+
+            <!-- Success State -->
+            <div id="successState" class="success">
+                <div class="success-icon">✓</div>
+                <h3 style="color: #4ecca3; margin-bottom: 15px;">Location Shared!</h3>
+
+                <div class="location-info">
+                    <div style="color: #888; margin-bottom: 5px;">Your coordinates</div>
+                    <div class="coords" id="coordsDisplay">--</div>
+                </div>
+
+                <p style="color: #888;">
+                    Your location has been sent. You can now close this page.
+                </p>
+            </div>
+
+            <!-- Error State -->
+            <div id="errorState" class="error">
+                <div class="error-icon">✗</div>
+                <h3 style="color: #e94560; margin-bottom: 15px;">Location Error</h3>
+                <p id="errorMessage" style="color: #888; margin-bottom: 20px;"></p>
+                <button class="btn btn-retry" onclick="requestLocation()">
+                    Try Again
+                </button>
+            </div>
+
+            <!-- Expired State -->
+            <div id="expiredState" class="expired">
+                <div class="expired-icon">⏰</div>
+                <h3 style="color: #f39c12; margin-bottom: 15px;">Link Expired</h3>
+                <p style="color: #888;">
+                    This location request has expired. Please contact your supervisor if needed.
+                </p>
+                <!-- Debug info -->
+                <p style="color: #555; font-size: 0.7em; margin-top: 20px;">
+                    Sent: {{ sent_time|default('N/A') }}<br>
+                    Expires: {{ expires_time|default('N/A') }}<br>
+                    Server time: {{ server_time|default('N/A') }}<br>
+                    Status: {{ status_debug|default('N/A') }}
+                </p>
+            </div>
+        </div>
+
+        <div class="footer">
+            WAGEPRO Payroll System
+        </div>
+    </div>
+
+    <script>
+        const token = "{{ token }}";
+        // DEBUG: expired variable is: {{ expired }}
+        const isExpired = {{ 'true' if expired else 'false' }};
+
+        // Show expired state if link has expired
+        if (isExpired) {
+            document.getElementById('requestState').style.display = 'none';
+            document.getElementById('expiredState').style.display = 'block';
+        }
+
+        function showState(stateId) {
+            ['requestState', 'loadingState', 'successState', 'errorState', 'expiredState'].forEach(id => {
+                document.getElementById(id).style.display = 'none';
+            });
+            document.getElementById(stateId).style.display = 'block';
+        }
+
+        function requestLocation() {
+            showState('loadingState');
+
+            if (!navigator.geolocation) {
+                showError("Geolocation is not supported by your browser");
+                return;
+            }
+
+            navigator.geolocation.getCurrentPosition(
+                onLocationSuccess,
+                onLocationError,
+                {
+                    enableHighAccuracy: true,
+                    timeout: 30000,
+                    maximumAge: 0
+                }
+            );
+        }
+
+        async function onLocationSuccess(position) {
+            const lat = position.coords.latitude;
+            const lng = position.coords.longitude;
+            const accuracy = position.coords.accuracy;
+
+            console.log(`Location: ${lat}, ${lng} (accuracy: ${accuracy}m)`);
+
+            // Send to server
+            try {
+                const response = await fetch('/api/location/receive', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        token: token,
+                        latitude: lat,
+                        longitude: lng,
+                        accuracy: accuracy
+                    })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    showState('successState');
+                    document.getElementById('coordsDisplay').textContent =
+                        `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+                } else {
+                    showError(result.error || "Failed to send location");
+                }
+            } catch (error) {
+                showError("Network error: " + error.message);
+            }
+        }
+
+        function onLocationError(error) {
+            let message;
+            switch(error.code) {
+                case error.PERMISSION_DENIED:
+                    message = "Location permission denied. Please enable location access in your browser settings.";
+                    break;
+                case error.POSITION_UNAVAILABLE:
+                    message = "Location unavailable. Please try again.";
+                    break;
+                case error.TIMEOUT:
+                    message = "Location request timed out. Please try again.";
+                    break;
+                default:
+                    message = "An unknown error occurred.";
+            }
+            showError(message);
+        }
+
+        function showError(message) {
+            document.getElementById('errorMessage').textContent = message;
+            showState('errorState');
+        }
+    </script>
+</body>
+</html>

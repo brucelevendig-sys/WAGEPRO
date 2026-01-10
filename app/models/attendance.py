@@ -1,0 +1,628 @@
+"""
+Attendance Models for WAGEPRO
+Worker sign-in/sign-out with GPS verification and progress pictures
+"""
+
+from sqlalchemy import Column, Integer, String, Float, Date, DateTime, Boolean, ForeignKey, Text, Enum as SQLEnum
+from sqlalchemy.orm import relationship
+from datetime import datetime
+import enum
+
+from app.database import Base
+
+
+class CheckInStatus(str, enum.Enum):
+    """Check-in status"""
+    PENDING = "pending"      # Waiting for sign-out
+    COMPLETED = "completed"  # Both sign-in and sign-out done
+    REJECTED = "rejected"    # Rejected by manager (GPS mismatch, etc.)
+
+
+class LeaveType(str, enum.Enum):
+    """Leave types"""
+    BOOKED = "L"      # Booked leave (planned ahead)
+    SICK = "S"        # Sick leave (day of)
+
+
+class LeaveStatus(str, enum.Enum):
+    """Leave request status"""
+    PENDING = "pending"      # Awaiting approval
+    APPROVED = "approved"    # Approved by admin
+    REJECTED = "rejected"    # Rejected by admin
+    CANCELLED = "cancelled"  # Cancelled by staff/admin
+
+
+class PictureStatus(str, enum.Enum):
+    """Progress picture status"""
+    PENDING = "pending"      # Awaiting review
+    ACCEPTED = "accepted"    # Approved by manager
+    REJECTED = "rejected"    # Rejected by manager
+
+
+class WorkerAttendance(Base):
+    """
+    Daily worker attendance record
+    Tracks sign-in and sign-out with GPS verification
+    """
+    __tablename__ = "worker_attendance"
+
+    id = Column(Integer, primary_key=True, index=True)
+
+    # Links
+    staff_id = Column(Integer, ForeignKey("staff_members.id"), nullable=False, index=True)
+    site_id = Column(Integer, ForeignKey("sites.id"), nullable=True, index=True)  # Nullable for GPS exempt workers
+    work_date = Column(Date, nullable=False, index=True)
+
+    # Sign In
+    signin_time = Column(DateTime, nullable=True)
+    signin_latitude = Column(Float, nullable=True)
+    signin_longitude = Column(Float, nullable=True)
+    signin_accuracy = Column(Float, nullable=True)  # GPS accuracy in meters
+    signin_distance = Column(Float, nullable=True)  # Distance from site in meters
+    signin_device = Column(String(500), nullable=True)  # User agent / device info
+
+    # Sign Out
+    signout_time = Column(DateTime, nullable=True)
+    signout_latitude = Column(Float, nullable=True)
+    signout_longitude = Column(Float, nullable=True)
+    signout_accuracy = Column(Float, nullable=True)
+    signout_distance = Column(Float, nullable=True)
+    signout_device = Column(String(500), nullable=True)
+
+    # Calculated Fields
+    hours_worked = Column(Float, nullable=True)  # Calculated from signin/signout
+
+    # Penalty Tracking (for late clock-in / early clock-out)
+    late_minutes = Column(Integer, default=0)  # Minutes late clocking in (after grace period)
+    early_departure_minutes = Column(Integer, default=0)  # Minutes early clocking out
+    penalty_amount = Column(Float, default=0.0)  # Calculated deduction amount
+
+    # Overtime Tracking (for late clock-out with reason)
+    overtime_minutes = Column(Integer, default=0)  # Minutes worked after normal hours
+    overtime_reason = Column(String(500), nullable=True)  # Reason for overtime
+    overtime_confirmed = Column(Boolean, default=False)  # True if worker confirmed OT
+
+    # Status and Verification
+    status = Column(SQLEnum(CheckInStatus), default=CheckInStatus.PENDING, nullable=False, index=True)
+    gps_verified = Column(Boolean, default=False)  # True if within site radius
+    manager_verified = Column(Boolean, default=False)  # Manager approval
+    verified_by_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    verified_at = Column(DateTime, nullable=True)
+
+    # Notes
+    notes = Column(Text, nullable=True)
+    rejection_reason = Column(Text, nullable=True)
+
+    # Project/Task selection (from clock-out)
+    project_id = Column(Integer, nullable=True)  # workpro_id from sync_projects
+    project_name = Column(String(200), nullable=True)
+    task_id = Column(Integer, nullable=True)  # workpro_id from sync_tasks
+    task_name = Column(String(500), nullable=True)  # "Project: Task" format
+
+    # Timestamps
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    # Relationships
+    staff = relationship("StaffMember")
+    site = relationship("Site")
+    verified_by = relationship("User", foreign_keys=[verified_by_id])
+    pictures = relationship("ProgressPicture", back_populates="attendance", cascade="all, delete-orphan")
+
+    @property
+    def picture_count(self):
+        """Number of pictures uploaded"""
+        return len(self.pictures) if self.pictures else 0
+
+    @property
+    def accepted_picture_count(self):
+        """Number of accepted pictures"""
+        if not self.pictures:
+            return 0
+        return len([p for p in self.pictures if p.status == PictureStatus.ACCEPTED])
+
+    def __repr__(self):
+        return f"<WorkerAttendance {self.staff_id} @ {self.site_id} on {self.work_date}>"
+
+
+class ProgressPicture(Base):
+    """
+    Progress pictures uploaded by responsible workers
+    Minimum 3 required per day for responsible workers
+    """
+    __tablename__ = "progress_pictures"
+
+    id = Column(Integer, primary_key=True, index=True)
+
+    # Links
+    attendance_id = Column(Integer, ForeignKey("worker_attendance.id"), nullable=False, index=True)
+    staff_id = Column(Integer, ForeignKey("staff_members.id"), nullable=False, index=True)
+    site_id = Column(Integer, ForeignKey("sites.id"), nullable=True, index=True)  # Nullable for GPS exempt workers
+
+    # Picture Details
+    filename = Column(String(255), nullable=False)  # Stored filename
+    original_filename = Column(String(255), nullable=True)  # Original upload name
+    file_path = Column(String(500), nullable=False)  # Full path to stored file
+    file_size = Column(Integer, nullable=True)  # Size in bytes
+
+    # Timestamp and Location when taken
+    taken_at = Column(DateTime, nullable=False, default=datetime.utcnow)
+    latitude = Column(Float, nullable=True)
+    longitude = Column(Float, nullable=True)
+    accuracy = Column(Float, nullable=True)
+
+    # Description / Caption
+    description = Column(Text, nullable=True)
+
+    # Review Status
+    status = Column(SQLEnum(PictureStatus), default=PictureStatus.PENDING, nullable=False, index=True)
+    reviewed_by_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    reviewed_at = Column(DateTime, nullable=True)
+    review_notes = Column(Text, nullable=True)
+
+    # Timestamps
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+
+    # Relationships
+    attendance = relationship("WorkerAttendance", back_populates="pictures")
+    staff = relationship("StaffMember")
+    site = relationship("Site")
+    reviewed_by = relationship("User", foreign_keys=[reviewed_by_id])
+
+    def __repr__(self):
+        return f"<ProgressPicture {self.id} - {self.status.value}>"
+
+
+class LocationRequestStatus(str, enum.Enum):
+    """Location request status"""
+    PENDING = "pending"      # SMS sent, waiting for response
+    RECEIVED = "received"    # Location received
+    EXPIRED = "expired"      # Token expired without response
+
+
+class LocationRequest(Base):
+    """
+    Location/Whereabouts request
+    Sends SMS with link for staff to share their GPS location
+    """
+    __tablename__ = "location_requests"
+
+    id = Column(Integer, primary_key=True, index=True)
+
+    # Links
+    staff_id = Column(Integer, ForeignKey("staff_members.id"), nullable=False, index=True)
+
+    # Unique token for the location link
+    token = Column(String(64), unique=True, nullable=False, index=True)
+
+    # Request details
+    requested_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    requested_by = Column(String(100), nullable=True)  # Who requested the location check
+    reason = Column(Text, nullable=True)  # Why checking whereabouts
+
+    # SMS tracking
+    sms_sent_at = Column(DateTime, nullable=True)
+    sms_status = Column(String(50), default='pending')
+
+    # Response
+    status = Column(SQLEnum(LocationRequestStatus), default=LocationRequestStatus.PENDING, nullable=False, index=True)
+    responded_at = Column(DateTime, nullable=True)
+
+    # Location data received
+    latitude = Column(Float, nullable=True)
+    longitude = Column(Float, nullable=True)
+    accuracy = Column(Float, nullable=True)
+    address = Column(Text, nullable=True)  # Reverse geocoded address if available
+
+    # Expiry (tokens valid for 24 hours)
+    expires_at = Column(DateTime, nullable=True)
+
+    # Timestamps - use local time for consistency with expires_at
+    created_at = Column(DateTime, default=datetime.now, nullable=False)
+
+    # Relationships
+    staff = relationship("StaffMember")
+
+    @property
+    def is_expired(self):
+        """Check if token has expired"""
+        if self.expires_at:
+            return datetime.now() > self.expires_at
+        return False
+
+    def __repr__(self):
+        return f"<LocationRequest {self.id} - {self.status.value}>"
+
+
+class ReminderType(str, enum.Enum):
+    """Attendance reminder types"""
+    CLOCKIN = "clockin"      # Morning clock-in reminder
+    CLOCKOUT = "clockout"    # Afternoon clock-out reminder
+
+
+class ReminderStatus(str, enum.Enum):
+    """Reminder status"""
+    SENT = "sent"            # SMS sent, awaiting response
+    RESPONDED = "responded"  # Worker clocked in/out after reminder
+    ESCALATED = "escalated"  # Second reminder sent
+    NO_RESPONSE = "no_response"  # No response within timeframe
+    EXPIRED = "expired"      # Timeframe passed
+    NOT_WORKING = "not_working"  # Worker confirmed not working today (with GPS)
+
+
+class AttendanceReminder(Base):
+    """
+    Track attendance reminders sent to workers
+    Used for automated clock-in/out SMS reminders
+    """
+    __tablename__ = "attendance_reminders"
+
+    id = Column(Integer, primary_key=True, index=True)
+
+    # Links
+    staff_id = Column(Integer, ForeignKey("staff_members.id"), nullable=False, index=True)
+    site_id = Column(Integer, ForeignKey("sites.id"), nullable=True, index=True)
+    work_date = Column(Date, nullable=False, index=True)
+
+    # Reminder type and timing
+    reminder_type = Column(SQLEnum(ReminderType), nullable=False, index=True)
+    scheduled_time = Column(DateTime, nullable=False)  # When reminder was scheduled (07:20 or 16:30)
+
+    # SMS tracking
+    first_sms_sent_at = Column(DateTime, nullable=True)
+    first_sms_status = Column(String(50), default='pending')
+    second_sms_sent_at = Column(DateTime, nullable=True)  # Escalation at +5 min
+    second_sms_status = Column(String(50), nullable=True)
+
+    # Response tracking
+    status = Column(SQLEnum(ReminderStatus), default=ReminderStatus.SENT, nullable=False, index=True)
+    responded_at = Column(DateTime, nullable=True)
+    attendance_id = Column(Integer, ForeignKey("worker_attendance.id"), nullable=True)  # Link to actual clock-in/out
+
+    # Penalty tracking
+    late_minutes = Column(Integer, default=0)  # Minutes late clocking in
+    early_departure_minutes = Column(Integer, default=0)  # Minutes early clocking out
+    penalty_applied = Column(Boolean, default=False)  # Whether pay deduction was made
+
+    # Notes
+    notes = Column(Text, nullable=True)
+
+    # Timestamps
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    # Relationships
+    staff = relationship("StaffMember")
+    site = relationship("Site")
+    attendance = relationship("WorkerAttendance")
+
+    def __repr__(self):
+        return f"<AttendanceReminder {self.staff_id} {self.reminder_type.value} on {self.work_date}>"
+
+
+class LeaveRecord(Base):
+    """
+    Leave records for staff
+    Tracks booked leave (L) and sick leave (S)
+    Not paid but tracked for stats
+    """
+    __tablename__ = "leave_records"
+
+    id = Column(Integer, primary_key=True, index=True)
+
+    # Links
+    staff_id = Column(Integer, ForeignKey("staff_members.id"), nullable=False, index=True)
+    site_id = Column(Integer, ForeignKey("sites.id"), nullable=True, index=True)
+
+    # Leave details
+    leave_date = Column(Date, nullable=False, index=True)
+    leave_type = Column(SQLEnum(LeaveType), nullable=False, index=True)
+    status = Column(SQLEnum(LeaveStatus), default=LeaveStatus.APPROVED, nullable=False, index=True)
+
+    # For booked leave - can be entered ahead of time
+    # For sick leave - entered on the day
+
+    # Who entered it
+    entered_by_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    entered_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+
+    # Approval (for future use if needed)
+    approved_by_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    approved_at = Column(DateTime, nullable=True)
+
+    # Notes/Reason
+    reason = Column(Text, nullable=True)
+    notes = Column(Text, nullable=True)
+
+    # Timestamps
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    # Relationships
+    staff = relationship("StaffMember")
+    site = relationship("Site")
+    entered_by = relationship("User", foreign_keys=[entered_by_id])
+    approved_by = relationship("User", foreign_keys=[approved_by_id])
+
+    def __repr__(self):
+        return f"<LeaveRecord {self.staff_id} {self.leave_type.value} on {self.leave_date}>"
+
+
+class NoWorkDayType(str, enum.Enum):
+    """Types of no-work days"""
+    PUBLIC_HOLIDAY = "public_holiday"
+    COMPANY_CLOSURE = "company_closure"
+    WAGE_WEEKEND = "wage_weekend"
+    WEATHER = "weather"
+    OTHER = "other"
+
+
+class NoWorkDay(Base):
+    """
+    No-Work Day notification
+    Admin notifies staff that there's no work on a specific day.
+    Can be site-specific or company-wide.
+    """
+    __tablename__ = "no_work_days"
+
+    id = Column(Integer, primary_key=True, index=True)
+
+    # The date(s) - single day or can create multiple entries
+    no_work_date = Column(Date, nullable=False, index=True)
+
+    # Optional: Site-specific (null = all sites / company-wide)
+    site_id = Column(Integer, ForeignKey("sites.id"), nullable=True, index=True)
+
+    # Details
+    day_type = Column(SQLEnum(NoWorkDayType), default=NoWorkDayType.OTHER, nullable=False)
+    reason = Column(String(500), nullable=False)  # e.g., "Christmas Day", "Load shedding", etc.
+    message = Column(Text, nullable=True)  # Additional message to staff
+
+    # Who created it
+    created_by_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+
+    # SMS notification
+    sms_sent = Column(Boolean, default=False)
+    sms_sent_at = Column(DateTime, nullable=True)
+    sms_scheduled_for = Column(DateTime, nullable=True)  # If scheduled for later delivery
+
+    # Active flag (can cancel a no-work day)
+    is_active = Column(Boolean, default=True, index=True)
+
+    # Relationships
+    site = relationship("Site")
+    created_by = relationship("User")
+    acknowledgments = relationship("NoWorkAcknowledgment", back_populates="no_work_day")
+
+    def __repr__(self):
+        site_info = f"Site {self.site_id}" if self.site_id else "All Sites"
+        return f"<NoWorkDay {self.no_work_date} - {site_info}>"
+
+
+class NoWorkAcknowledgment(Base):
+    """
+    Staff acknowledgment of no-work day notification
+    Staff must acknowledge they received the instruction not to come in
+    """
+    __tablename__ = "no_work_acknowledgments"
+
+    id = Column(Integer, primary_key=True, index=True)
+
+    # Links
+    no_work_day_id = Column(Integer, ForeignKey("no_work_days.id"), nullable=False, index=True)
+    staff_id = Column(Integer, ForeignKey("staff_members.id"), nullable=False, index=True)
+
+    # Acknowledgment
+    acknowledged_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+
+    # Device info (for audit)
+    device_info = Column(String(500), nullable=True)
+
+    # Timestamps
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+
+    # Relationships
+    no_work_day = relationship("NoWorkDay", back_populates="acknowledgments")
+    staff = relationship("StaffMember")
+
+    def __repr__(self):
+        return f"<NoWorkAck Staff {self.staff_id} - NoWork {self.no_work_day_id}>"
+
+
+# ===== REWARDS & PENALTIES SYSTEM =====
+
+class RewardPenaltyCategory(str, enum.Enum):
+    """Categories for rewards and penalties"""
+    # Rewards (positive points)
+    PERFECT_ATTENDANCE = "perfect_attendance"    # No absences in fortnight
+    TIMELY_CLOCKIN = "timely_clockin"            # All clock-ins on time
+    EARLY_ARRIVAL = "early_arrival"              # Consistently early
+    SPECIAL_ACHIEVEMENT = "special_achievement"  # Manual - exceptional work
+    SAFETY_BONUS = "safety_bonus"                # Manual - zero incidents
+    OTHER_REWARD = "other_reward"                # Manual - custom reward
+
+    # Penalties (negative points)
+    LATE_CLOCKIN = "late_clockin"                # Late clock-in incidents
+    ABSENTEEISM = "absenteeism"                  # Unexcused absences
+    EARLY_DEPARTURE = "early_departure"          # Left early without reason
+    NEGLIGENCE = "negligence"                    # Manual - poor work quality
+    MISCONDUCT = "misconduct"                    # Manual - policy violation
+    OTHER_PENALTY = "other_penalty"              # Manual - custom penalty
+
+
+class RewardPenaltySource(str, enum.Enum):
+    """Source of reward/penalty"""
+    SYSTEM = "system"    # Auto-generated from attendance stats
+    MANUAL = "manual"    # Admin-created
+
+
+class RewardPenaltyStatus(str, enum.Enum):
+    """Status of reward/penalty"""
+    PENDING = "pending"      # Awaiting approval
+    APPROVED = "approved"    # Approved, will be applied at period close
+    CANCELLED = "cancelled"  # Cancelled by admin
+    APPLIED = "applied"      # Applied to payslip
+
+
+class StaffRewardPenalty(Base):
+    """
+    Staff Rewards and Penalties
+    Points-based system with configurable Rand conversion
+    Can be individual, site-wide, or company-wide
+    """
+    __tablename__ = "staff_rewards_penalties"
+
+    id = Column(Integer, primary_key=True, index=True)
+
+    # Target: Individual staff, Site, or Company-wide
+    # If staff_id is set: Individual reward/penalty
+    # If site_id is set (no staff_id): Site-wide (applied to all staff at site)
+    # If both null: Company-wide (applied to all staff)
+    staff_id = Column(Integer, ForeignKey("staff_members.id"), nullable=True, index=True)
+    site_id = Column(Integer, ForeignKey("sites.id"), nullable=True, index=True)
+
+    # Pay period this applies to
+    pay_period_id = Column(Integer, ForeignKey("pay_periods.id"), nullable=False, index=True)
+
+    # Reward/Penalty details
+    category = Column(SQLEnum(RewardPenaltyCategory), nullable=False, index=True)
+    points = Column(Integer, nullable=False)  # Positive for reward, negative for penalty
+    source = Column(SQLEnum(RewardPenaltySource), default=RewardPenaltySource.MANUAL, nullable=False)
+    description = Column(Text, nullable=True)
+
+    # Status and approval
+    status = Column(SQLEnum(RewardPenaltyStatus), default=RewardPenaltyStatus.PENDING, nullable=False, index=True)
+    created_by_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    approved_by_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    approved_at = Column(DateTime, nullable=True)
+
+    # Application to payslip
+    applied_at = Column(DateTime, nullable=True)
+    applied_to_payslip_id = Column(Integer, ForeignKey("payslips.id"), nullable=True)
+
+    # For system-generated: reference data (e.g., count of late incidents)
+    reference_count = Column(Integer, nullable=True)  # e.g., number of late days
+    reference_data = Column(Text, nullable=True)  # JSON for additional context
+
+    # Timestamps
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    # Relationships
+    staff = relationship("StaffMember", foreign_keys=[staff_id])
+    site = relationship("Site")
+    pay_period = relationship("PayPeriod")
+    created_by = relationship("User", foreign_keys=[created_by_id])
+    approved_by = relationship("User", foreign_keys=[approved_by_id])
+    applied_to_payslip = relationship("Payslip", foreign_keys=[applied_to_payslip_id])
+
+    @property
+    def is_reward(self):
+        """Check if this is a reward (positive points)"""
+        return self.points > 0
+
+    @property
+    def is_penalty(self):
+        """Check if this is a penalty (negative points)"""
+        return self.points < 0
+
+    @property
+    def target_type(self):
+        """Get target type: individual, site, or company"""
+        if self.staff_id:
+            return "individual"
+        elif self.site_id:
+            return "site"
+        else:
+            return "company"
+
+    def __repr__(self):
+        target = f"Staff {self.staff_id}" if self.staff_id else (f"Site {self.site_id}" if self.site_id else "Company")
+        return f"<StaffRewardPenalty {self.id} - {target} - {self.points}pts>"
+
+
+class PointsConfiguration(Base):
+    """
+    System configuration for points values and conversion rates
+    Admin-configurable settings
+    """
+    __tablename__ = "points_configuration"
+
+    id = Column(Integer, primary_key=True, index=True)
+    config_key = Column(String(100), unique=True, nullable=False, index=True)
+    config_value = Column(String(500), nullable=False)
+    description = Column(Text, nullable=True)
+    updated_by_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    # Relationship
+    updated_by = relationship("User")
+
+    def __repr__(self):
+        return f"<PointsConfig {self.config_key}={self.config_value}>"
+
+
+# Default configuration keys:
+# - points_to_rand_rate: R value per point (default: 5.0)
+# - perfect_attendance_points: Points for perfect attendance (default: 10)
+# - timely_clockin_points: Points for all on-time clock-ins (default: 5)
+# - late_clockin_points: Points per late incident (default: -2)
+# - absenteeism_points: Points per unexcused absence (default: -10)
+# - auto_approve_rewards: Auto-approve system rewards (default: false)
+# - auto_approve_penalties: Auto-approve system penalties (default: false)
+
+
+class SMSType(str, enum.Enum):
+    """Types of SMS messages"""
+    CLOCKIN_REMINDER = "clockin_reminder"      # Morning clock-in reminder
+    CLOCKOUT_REMINDER = "clockout_reminder"    # Afternoon clock-out reminder
+    LOCATION_CHECK = "location_check"          # Whereabouts location request
+    SIGNIN_NOTIFICATION = "signin_notification"  # Admin notification of sign-in
+    SIGNOUT_NOTIFICATION = "signout_notification"  # Admin notification of sign-out
+    BULK_MESSAGE = "bulk_message"              # General bulk SMS announcement
+    NO_WORK_DAY = "no_work_day"                # No work day notification
+    OTHER = "other"                            # Other/custom SMS
+
+
+class SMSLog(Base):
+    """
+    SMS Log - tracks all SMS messages sent through the system
+    Used for audit trail and staff SMS history viewing
+    """
+    __tablename__ = "sms_logs"
+
+    id = Column(Integer, primary_key=True, index=True)
+
+    # Target staff member (nullable for admin-only messages)
+    staff_id = Column(Integer, ForeignKey("staff_members.id"), nullable=True, index=True)
+
+    # Phone number the SMS was sent to
+    phone_number = Column(String(50), nullable=False)
+
+    # SMS content
+    message = Column(Text, nullable=False)
+    sms_type = Column(SQLEnum(SMSType), default=SMSType.OTHER, nullable=False, index=True)
+
+    # Batch file reference (for FTP gateway)
+    batch_filename = Column(String(255), nullable=True)
+
+    # Status tracking
+    sent_at = Column(DateTime, default=datetime.now, nullable=False, index=True)
+    status = Column(String(50), default='sent')  # sent, failed, pending
+
+    # Who triggered the SMS (null for automated)
+    sent_by_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+
+    # Additional context
+    context = Column(Text, nullable=True)  # JSON for additional data (e.g., site_id, reminder_id)
+
+    # Timestamps
+    created_at = Column(DateTime, default=datetime.now, nullable=False)
+
+    # Relationships
+    staff = relationship("StaffMember")
+    sent_by = relationship("User")
+
+    def __repr__(self):
+        return f"<SMSLog {self.id} - {self.sms_type.value} to {self.phone_number}>"
