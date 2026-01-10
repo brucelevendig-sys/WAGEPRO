@@ -156,6 +156,35 @@ def health_check():
     return jsonify({'status': 'ok', 'service': 'wagepro'}), 200
 
 
+@app.route('/init-admin')
+def init_admin():
+    """Create admin user if not exists - for initial Railway setup"""
+    db = SessionLocal()
+    try:
+        admin = db.query(User).filter(User.username == 'admin').first()
+        if admin:
+            return jsonify({'message': 'Admin already exists', 'username': 'admin'}), 200
+
+        password = "admin123"
+        password_hash = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+        admin = User(
+            username='admin',
+            password_hash=password_hash,
+            full_name='System Administrator',
+            email='admin@wagepro.local',
+            role=UserRole.ADMIN,
+            is_active=True
+        )
+        db.add(admin)
+        db.commit()
+        return jsonify({'message': 'Admin created', 'username': 'admin', 'password': 'admin123'}), 201
+    except Exception as e:
+        db.rollback()
+        return jsonify({'error': str(e)}), 500
+    finally:
+        db.close()
+
+
 @app.route('/')
 def index():
     """Serve main page"""
