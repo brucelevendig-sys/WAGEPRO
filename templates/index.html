@@ -644,7 +644,7 @@
                     </div>
 
                     <!-- Reminder Summary (Clickable) -->
-                    <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: 1.5rem;">
+                    <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 1rem; margin-bottom: 1.5rem;">
                         <div onclick="showReminderList('responded')" style="background: #10b981; color: white; padding: 1rem; border-radius: 8px; text-align: center; cursor: pointer; transition: transform 0.2s, box-shadow 0.2s;" onmouseover="this.style.transform='scale(1.02)'; this.style.boxShadow='0 4px 12px rgba(0,0,0,0.2)';" onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='none';">
                             <div style="font-size: 1.5rem; font-weight: bold;" id="reminderResponded">0</div>
                             <div style="font-size: 0.875rem;">Responded</div>
@@ -653,6 +653,11 @@
                         <div onclick="showReminderList('awaiting')" style="background: #f59e0b; color: white; padding: 1rem; border-radius: 8px; text-align: center; cursor: pointer; transition: transform 0.2s, box-shadow 0.2s;" onmouseover="this.style.transform='scale(1.02)'; this.style.boxShadow='0 4px 12px rgba(0,0,0,0.2)';" onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='none';">
                             <div style="font-size: 1.5rem; font-weight: bold;" id="reminderPending">0</div>
                             <div style="font-size: 0.875rem;">Awaiting Response</div>
+                            <div style="font-size: 0.7rem; opacity: 0.8; margin-top: 0.25rem;">Click to view</div>
+                        </div>
+                        <div onclick="showReminderList('not_working')" style="background: #6366f1; color: white; padding: 1rem; border-radius: 8px; text-align: center; cursor: pointer; transition: transform 0.2s, box-shadow 0.2s;" onmouseover="this.style.transform='scale(1.02)'; this.style.boxShadow='0 4px 12px rgba(0,0,0,0.2)';" onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='none';">
+                            <div style="font-size: 1.5rem; font-weight: bold;" id="reminderNotWorking">0</div>
+                            <div style="font-size: 0.875rem;">Not Working</div>
                             <div style="font-size: 0.7rem; opacity: 0.8; margin-top: 0.25rem;">Click to view</div>
                         </div>
                         <div onclick="showReminderList('no_response')" style="background: #ef4444; color: white; padding: 1rem; border-radius: 8px; text-align: center; cursor: pointer; transition: transform 0.2s, box-shadow 0.2s;" onmouseover="this.style.transform='scale(1.02)'; this.style.boxShadow='0 4px 12px rgba(0,0,0,0.2)';" onmouseout="this.style.transform='scale(1)'; this.style.boxShadow='none';">
@@ -674,6 +679,7 @@
                             <select id="reminderStatusFilter" onchange="filterReminderTable()" style="padding: 0.5rem; border-radius: 4px; border: 1px solid #d1d5db;">
                                 <option value="all">All Status</option>
                                 <option value="responded">✅ Responded</option>
+                                <option value="not_working">🏠 Not Working</option>
                                 <option value="no_response">❌ No Response</option>
                                 <option value="escalated">⚠️ Escalated</option>
                                 <option value="sent">📤 Sent</option>
@@ -5672,7 +5678,8 @@
                 const summary = await summaryResponse.json();
 
                 document.getElementById('reminderResponded').textContent = summary.clockin_responded || 0;
-                document.getElementById('reminderPending').textContent = (summary.clockin_reminders_sent - summary.clockin_responded - summary.clockin_no_response) || 0;
+                document.getElementById('reminderPending').textContent = (summary.clockin_reminders_sent - summary.clockin_responded - summary.clockin_no_response - (summary.clockin_not_working || 0)) || 0;
+                document.getElementById('reminderNotWorking').textContent = summary.clockin_not_working || 0;
                 document.getElementById('reminderNoResponse').textContent = summary.clockin_no_response || 0;
                 document.getElementById('reminderLate').textContent = summary.late_workers || 0;
 
@@ -5696,6 +5703,8 @@
                             statusBadge = `<span style="background: #7c3aed; color: white; padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.75rem; white-space: nowrap;">🏖️ ON ${leaveLabel}</span>`;
                         } else if (r.status === 'responded') {
                             statusBadge = '<span style="background: #10b981; color: white; padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.75rem;">Responded</span>';
+                        } else if (r.status === 'not_working') {
+                            statusBadge = '<span style="background: #6366f1; color: white; padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.75rem;">🏠 Not Working</span>';
                         } else if (r.status === 'escalated') {
                             statusBadge = '<span style="background: #f59e0b; color: white; padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.75rem;">Escalated</span>';
                         } else if (r.status === 'no_response') {
@@ -6533,6 +6542,40 @@
                         }).join('');
                     } else {
                         tableBody.innerHTML = '<tr><td colspan="7" style="text-align: center; color: #6b7280;">No reminders awaiting response</td></tr>';
+                    }
+                    break;
+
+                case 'not_working':
+                    filteredList = allReminders.filter(r => r.status === 'not_working' && !r.on_leave);
+                    titleText = `🏠 Not Working (${filteredList.length})`;
+                    titleColor = '#6366f1';
+                    tableHead.innerHTML = `
+                        <tr>
+                            <th>Staff Name</th>
+                            <th>Site</th>
+                            <th>Type</th>
+                            <th>Reported At</th>
+                            <th>Reason</th>
+                        </tr>
+                    `;
+                    if (filteredList.length > 0) {
+                        tableBody.innerHTML = filteredList.map(r => {
+                            const typeLabel = r.reminder_type === 'clockin' ? '🌅 Clock In' : '🌆 Clock Out';
+                            const reportedAt = r.responded_at ? new Date(r.responded_at).toLocaleTimeString('en-ZA', {hour: '2-digit', minute: '2-digit'}) : '-';
+                            const reason = r.notes || 'No reason provided';
+
+                            return `
+                                <tr style="background: #eef2ff;">
+                                    <td><strong style="color: #6366f1;">${r.staff_name}</strong></td>
+                                    <td>${r.site_name || 'No Site'}</td>
+                                    <td>${typeLabel}</td>
+                                    <td>${reportedAt}</td>
+                                    <td>${reason}</td>
+                                </tr>
+                            `;
+                        }).join('');
+                    } else {
+                        tableBody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: #6b7280;">No staff reported not working</td></tr>';
                     }
                     break;
 
